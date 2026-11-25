@@ -1,0 +1,1543 @@
+/* ═══════════════════════════════════════════════════════
+   Ground Truth engine — shared components (all layouts)
+   Tokens, reset, story cards/detail, intake (stepped + chat),
+   consent, kiosk, hints, failure states. Layout arrangement
+   lives in css/layouts/<name>.css — nothing here may position
+   layout chrome or reference layout-only DOM.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── RESET ─── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --primary: #2EB4D7;
+  --primary-d: #1A8BAA;
+  --primary-l: #E3FBFF;
+  --accent: #56AC52;
+  --danger: #D63B3B;
+  --text: #000;
+  --muted: #4A5568;
+  --border: #C8E9F2;
+  --bg: #E3FBFF;
+  --white: #fff;
+}
+
+html { font-size: 17px; }        /* was 16px: readable base for an interactive map */
+/* iOS Safari inflates text inside block containers unless a page opts out, on
+   top of the 17px base — which reads as the whole layout being rendered "at a
+   bigger size" and not responding to the window. Both spellings: the
+   unprefixed one is the standard, the prefixed one is what Safari ships. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html, body {
+  font-family: var(--font, Arial, Helvetica, sans-serif);
+  color: var(--text);
+}
+
+/* 19 August. The document itself must never scroll or pan.
+   Every surface here is `position: fixed` and every list scrolls inside its own
+   box, so the page has nothing to scroll — but it was still SCROLLABLE, and on
+   iOS that has teeth. `.story-card` parks itself below the fold with
+   `translateY(101%)`, which is real scrollable overflow; and if anything is
+   ever a few pixels wider than the screen, Safari widens the LAYOUT viewport to
+   fit it, at which point every `right:`-anchored fixed control anchors to the
+   wider box and hangs off the edge while the left side still looks correct.
+   That is what Judy's iPhone screenshot shows.
+
+   Locking the document closes the whole class rather than chasing whichever
+   element is a few pixels too wide this week. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+button, input, textarea, select {
+  font-family: var(--font, Arial, Helvetica, sans-serif);
+  outline: none;
+  border: none;
+}
+
+button { cursor: pointer; }
+
+/* Inline SVG icon set (js/ui/icons.js) — sits on the text baseline and
+   inherits color, so themed chrome needs no per-icon CSS. */
+.ico { vertical-align: -0.145em; flex-shrink: 0; }
+
+
+.scard {
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.scard:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(46, 180, 215, .15);
+  transform: translateY(-1px);
+}
+
+.scard-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.scard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+}
+
+.scard-who { font-size: .72rem; font-weight: 700; flex: 1; }
+
+.scard-hood {
+  font-size: .76rem;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scard-txt {
+  font-size: .74rem;
+  color: #222;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.scard-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.scard-cat {
+  font-size: .76rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.scard-media { display: flex; gap: 3px; }
+
+.scard-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.scard-date {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Story card hero image */
+.scard-hero {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 9px 9px 0 0;
+  cursor: pointer;
+}
+
+.scard-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .2s;
+}
+
+.scard-hero:hover img { transform: scale(1.03); }
+
+/* A video hero. Either a captured poster (an <img>, handled above) or, for
+   clips uploaded before posters existed, the clip itself at preload="metadata"
+   so the browser paints its first frame. Same box either way, so the feed keeps
+   one rhythm whatever a story happens to carry. */
+.scard-hero video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;    /* the card owns the click, not the clip */
+}
+
+/* Says "this is footage" without promising a player that is not there: the
+   hero is a still, and playing happens in the story detail. */
+.scard-hero-play {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  pointer-events: none;
+}
+.scard-hero-play svg { width: 14px; height: 14px; }
+
+.scard-hero-count {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, .6);
+  color: white;
+  font-size: .76rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+
+.gal-item {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.gal-item img,
+.gal-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .2s;
+}
+
+.gal-item:hover img,
+.gal-item:hover video { transform: scale(1.05); }
+
+.gal-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 6px 5px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .55));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gal-name {
+  font-size: .78rem;
+  font-weight: 700;
+  color: white;
+}
+
+.gal-hood {
+  font-size: .73rem;
+  color: rgba(255, 255, 255, .75);
+}
+
+/* one tidy line each — a long spot name must not swallow the tile */
+.gal-name,
+.gal-hood {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gal-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+}
+
+.gal-aud-ico {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: linear-gradient(135deg, var(--primary-l), color-mix(in srgb, var(--primary-l) 35%, #fff));
+}
+
+.gal-aud-lbl {
+  font-size: .81rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+
+.pin-hint {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  background: var(--primary-d);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 700;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(46, 180, 215, .45);
+  display: none;
+  animation: pop 2s infinite;
+}
+
+.pin-hint.show { display: block; }
+
+@keyframes pop {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.04); }
+}
+
+
+/* ─── MODAL / OVERLAY BASE ─── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  /* iOS does not shrink the layout viewport for the keyboard, so a sheet
+     flexed to flex-end sits underneath it. --vv-h is visualViewport.height,
+     published by ui.js; the fallback is the old full-height behaviour. */
+  height: var(--vv-h, 100%);
+  z-index: 30;
+  background: rgba(0, 0, 0, .5);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.overlay.open { display: flex; }
+
+/* Story overlay: NO blur, NO dark backdrop — map stays fully visible */
+#storyOverlay {
+  background: none;
+  backdrop-filter: none;
+  pointer-events: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+#storyOverlay .sheet {
+  pointer-events: all;
+  max-height: 65vh;
+  max-height: 65dvh;
+  box-shadow: 0 -6px 40px rgba(0, 0, 0, .22);
+}
+
+.sheet {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 620px;
+  max-height: 92vh;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp .35s cubic-bezier(.34, 1.2, .64, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.drag {
+  width: 38px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+
+/* ─── STORY POPUP ─── */
+.sp-head {
+  padding: 20px 20px 14px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--sp-color1, #2EB4D7), var(--sp-color2, #56AC52));
+}
+
+/* The story header is a SOLID tint with the story type's measured ink now
+   (REB-443), not a dark gradient, so nothing in it may hardcode white. Every
+   rule here inherits `color` from the inline ink and varies opacity instead,
+   which works on any header colour a tenant configures. */
+.sp-type {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: inherit;
+  opacity: .78;
+  margin-bottom: 4px;
+}
+
+.sp-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: inherit;
+  line-height: 1.1;
+}
+
+.sp-meta {
+  font-size: .7rem;
+  color: inherit;
+  opacity: .8;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sp-cat-badge {
+  background: rgba(255, 255, 255, .25);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, .3);
+}
+
+.sp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+.sp-text {
+  font-size: .85rem;
+  color: #111;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.sp-section-title {
+  font-size: .80rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+/* Photo gallery */
+.sp-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.sp-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity .15s;
+  border: 1px solid var(--border);
+}
+
+.sp-photo:hover { opacity: .9; }
+
+/* Video */
+.sp-video {
+  width: 100%;
+  border-radius: 10px;
+  max-height: 240px;
+  background: #000;
+  margin-bottom: 12px;
+}
+
+/* Privacy notice and its consent tick, the last thing before submit.
+
+   Solid border and a filled ground rather than the reachback's dashed box: this
+   one is not optional and should not read like an aside. The tick sits inside
+   the same box as the notice so it can never be agreed to on its own.
+
+   Sizes come off the --fs-* scale by way of rem values already used in this
+   file; nothing here renders below 12.5px. */
+.pn {
+  margin: 4px 0 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.pn-head {
+  margin: 0 0 8px;
+  font-size: .78rem; font-weight: 800; color: var(--text); line-height: 1.35;
+}
+.pn-list {
+  margin: 0 0 10px; padding-left: 17px;
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: .78rem; color: var(--muted); line-height: 1.5;
+}
+.pn-more { margin: 0 0 11px; font-size: .78rem; line-height: 1.5; color: var(--muted); }
+.pn-more a { color: var(--primary-d, var(--primary)); font-weight: 700; }
+/* The tick is a control, so it gets its own surface inside the notice and a
+   visible selected state. `align-items: flex-start` because the label wraps to
+   two or three lines on a phone and a centred box would float beside line two. */
+.pn-agree {
+  display: flex; align-items: flex-start; gap: 9px; cursor: pointer;
+  padding: 10px 11px; border: 1.5px solid var(--border); border-radius: 9px;
+  background: #fff;
+  font-size: .78rem; font-weight: 700; color: var(--text); line-height: 1.4;
+}
+.pn-agree.sel { border-color: var(--primary); background: var(--primary-l, #fff); }
+.pn-agree input { margin-top: 2px; width: 17px; height: 17px; flex: none; accent-color: var(--primary); }
+.pn-agree em { font-style: normal; color: var(--danger); }
+
+/* Public reachback — the intake opt-in (form) and the story affordance (detail) */
+.reachback {
+  margin: 4px 0 14px;
+  padding: 12px 13px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.rb-toggle { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.rb-toggle input { margin-top: 3px; width: 16px; height: 16px; flex: none; accent-color: var(--primary); }
+.rb-txt { display: flex; flex-direction: column; gap: 2px; }
+.rb-label { font-size: .78rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+.rb-hint { font-size: .81rem; color: var(--muted); line-height: 1.4; }
+.rb-warn {
+  display: flex; align-items: flex-start; gap: 6px; margin-top: 7px;
+  font-size: .81rem; color: var(--danger); line-height: 1.45; font-weight: 600;
+}
+.rb-warn svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
+
+/* "Get in touch" on the story detail (click-to-reveal). */
+.sp-reach {
+  margin-top: 18px; padding: 14px 15px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
+}
+.sp-reach-t {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 800; color: var(--text);
+}
+.sp-reach-t svg { width: 15px; height: 15px; }
+.sp-reach-cap { font-size: .72rem; color: var(--muted); line-height: 1.5; margin: 6px 0 10px; }
+.sp-reach-btn {
+  font-family: inherit; font-size: .74rem; font-weight: 700; cursor: pointer;
+  color: var(--primary-d, var(--primary)); background: #fff;
+  border: 1.5px solid var(--primary); border-radius: 999px; padding: 8px 16px;
+}
+.sp-reach-btn:hover { background: var(--primary-l); }
+.sp-reach-val {
+  display: inline-block; font-size: .82rem; font-weight: 700; color: var(--text);
+  word-break: break-word; user-select: all;
+}
+/* The `hidden` attribute is only a UA rule (`[hidden] { display: none }`), so
+   the `display: inline-block` above silently beat it and the contact rendered
+   visible before anyone pressed "Show contact" — the button was decorative and
+   the value sat in the page for any scraper. Author rule, so it wins. Any
+   element styled with an explicit `display` needs this alongside `hidden`. */
+.sp-reach-val[hidden] { display: none; }
+
+/* Uploaded file (PDF) link in the story detail */
+.sp-doc {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-bottom: 8px;
+  border: 1px solid var(--border); border-radius: 10px; text-decoration: none;
+  color: var(--text); font-size: .8rem; font-weight: 600;
+}
+.sp-doc:hover { border-color: var(--primary); background: var(--bg); }
+.sp-doc svg { width: 16px; height: 16px; color: var(--primary); flex: none; }
+
+/* Media counter + file preview tile */
+.media-count { font-size: .82rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.p-file {
+  width: 68px; height: 68px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 5px; text-align: center; color: var(--primary);
+}
+.p-file span { font-size: 12px; color: var(--muted); line-height: 1.1; word-break: break-all; }
+
+/* Audio */
+.sp-audio-wrap {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.sp-audio-label {
+  font-size: .7rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sp-audio { width: 100%; }
+
+.sp-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  background: white;
+}
+
+.sp-close {
+  flex: 1;
+  padding: 11px;
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  transition: all .15s;
+}
+
+.sp-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* Lightbox */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, .92);
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.lightbox.open { display: flex; }
+
+.lightbox img {
+  max-width: 95vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  background: rgba(255, 255, 255, .15);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ─── SUBMIT FORM ─── */
+.form-sheet .sheet-head {
+  padding: 16px 20px 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.form-sheet .sheet-head h2 { flex: 1; min-width: 0; }
+
+/* The way out. Until 19 August the only one was tapping the backdrop, which
+   the full-screen phone form does not have, and the drag pill above it looked
+   like the answer without being one. 44px, present at every width. */
+.sheet-x {
+  flex: none;
+  width: 44px; height: 44px;
+  margin: -10px -10px 0 0;
+  border: none; border-radius: 10px;
+  background: none; color: var(--muted);
+  font-size: 1.05rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .14s, color .14s;
+}
+.sheet-x:hover { background: var(--bg); color: var(--text); }
+
+/* Judy, 19 August: an ✕ top-right on every sheet, because that is what readers
+   read as "close". The footer "← Back to map" stays for anyone using it.
+   Absolute rather than in a header row: the six panels render their own heads
+   into `.ab-body` / `.imp-body`, so there is no shared bar to sit in. Solid
+   ground under it, or scrolling body text runs through the glyph. */
+.sheet { position: relative; }
+.sheet-x-abs {
+  position: absolute;
+  top: 6px; right: 8px;
+  z-index: 4;
+  margin: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .9);
+  backdrop-filter: blur(3px);
+}
+.sheet-x-abs:hover { background: var(--bg); color: var(--text); }
+/* Clear of the ✕: the panel heads run full width and their first line would
+   otherwise sit under it. The drag pill is centred, so it is unaffected. */
+.sheet-x-abs ~ .ab-body > :first-child,
+.sheet-x-abs ~ .imp-body > :first-child,
+.sheet-x-abs ~ .sheet-head,
+.sheet-x-abs ~ .sp-head { padding-right: 44px; }
+
+.form-sheet .sheet-head h2 {
+  font-family: var(--font-display, var(--font, inherit));
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.form-sheet .sheet-head p {
+  font-size: .76rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.form-sheet .sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+/* Progress: the bar, then in words which step this is and how many there are
+   (REB-426). The bar alone said "there are some of these" and left the actual
+   question, how much is left, unanswered. */
+.steps-wrap { margin-bottom: 18px; }
+.steps {
+  display: flex;
+  gap: 5px;
+}
+.steps-lbl {
+  margin-top: 7px;
+  font-size: var(--fs-micro, 12.5px);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .01em;
+}
+
+/* Separates the pin block from the story questions now that they share a step,
+   so the step reads as two things rather than one long run of controls. */
+.f-rule {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0 18px;
+}
+
+/* Two ways to answer one question, side by side rather than stacked: the storm
+   picker and an exact date (REB-438). Stacks under 420px, where two controls
+   plus the "or" leave each too narrow to read its own contents. */
+.f-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.f-pair-i {
+  flex: 1 1 0;
+  min-width: 0;             /* a flex item defaults to min-content, and a date
+                               input's intrinsic width would push the row wide */
+}
+
+.f-pair-or {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--fs-micro, 12.5px);
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .f-pair { flex-direction: column; align-items: stretch; gap: 6px; }
+  .f-pair-or { text-align: center; }
+}
+
+.step-d {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background .3s;
+}
+
+.step-d.done { background: var(--primary); }
+.step-d.now { background: var(--accent); }
+
+.err-msg {
+  background: #FEE;
+  border: 1px solid #FCC;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: .73rem;
+  color: var(--danger);
+  margin-bottom: 12px;
+  display: none;
+}
+
+.err-msg.show { display: block; }
+
+/* Type cards */
+.types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+/* Choice cards. The selected state was carried by each option's own `tint`
+   inline and a 4px left bar in its own hue; both went with the per-type colours
+   in REB-463, so the state lives here in CSS again instead of in a template. */
+.tc {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  text-align: left;
+  background: white;
+}
+
+.tc:hover { border-color: var(--story-blue); background: var(--primary-l); }
+/* Selected reads as a heavier border plus a tint, not as a different hue —
+   there is only one hue now, so the ring has to do the work the colour did. */
+.tc.sel { border-color: var(--story-blue); background: var(--primary-l); box-shadow: inset 0 0 0 1px var(--story-blue); }
+
+/* Holds the raindrop. Was a 1.2rem emoji slot stacked above the label; the mark
+   sits beside the words now so the card reads as one line at a glance. */
+/* REB-487. Two boxes on one line, for pairs that read as one answer: first
+   and last name, phone and social handle. Collapses to one column below 420px
+   — two 44px targets side by side on a narrow phone is how a thumb hits the
+   wrong one. */
+.fgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 419px) { .fgrid2 { grid-template-columns: 1fr; } }
+
+.tc-ico { flex: none; line-height: 0; display: flex; }
+/* Was .72rem = 12.24px at the 17px root, under the 12.5px floor the 5 Aug pass
+   set. This is a primary choice label, so it sits on the same rung as the story
+   card body and the layer labels. */
+.tc-name { font-size: var(--fs-label, 13.5px); font-weight: 700; display: block; }
+.tc-desc { font-size: var(--fs-micro, 12.5px); color: var(--muted); margin-top: 1px; display: block; }
+
+/* Category chips in form */
+.cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.fcat {
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.fcat:hover { border-color: var(--primary); color: var(--primary-d); }
+.fcat.sel { background: var(--primary-l); border-color: var(--primary); color: var(--primary-d); }
+
+/* Fields */
+.flbl {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 5px;
+  display: block;
+}
+
+.flbl em { color: var(--danger); font-style: normal; }
+
+.fhint {
+  font-size: .79rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+  display: block;
+}
+
+.field {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 9px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-size: .83rem;
+  color: var(--text);
+  transition: border-color .15s;
+  resize: none;
+}
+
+.field:focus { border-color: var(--primary); background: white; }
+.field::placeholder { color: #AAB8C2; }
+
+.chr {
+  text-align: right;
+  font-size: var(--fs-micro, 12.5px);
+  color: var(--muted);
+  margin-top: 3px;
+  min-height: 1em;          /* the count is empty until someone types, and the
+                               field must not jump when it appears */
+}
+
+/* Within 10% of the cap, so it reads as a limit only when it is about to be one. */
+.chr.near { color: var(--warn, #B45309); font-weight: 600; }
+
+.mb8 { margin-bottom: 8px; }
+.mb12 { margin-bottom: 12px; }
+
+/* Nav */
+.nav-row {
+  display: flex;
+  gap: 8px;
+  /* Clears the iPhone home indicator; a swipe up on Send went home instead. */
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  background: white;
+  flex-shrink: 0;
+}
+
+.btn-bk {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  transition: all .15s;
+}
+
+.btn-bk:hover { background: var(--border); color: var(--text); }
+
+.btn-nx {
+  flex: 1;
+  padding: 12px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-size: .82rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(46, 180, 215, .25);
+  transition: all .15s;
+}
+
+.btn-nx:hover {
+  box-shadow: 0 6px 18px rgba(46, 180, 215, .35);
+  transform: translateY(-1px);
+}
+
+/* Media tabs */
+.mtabs {
+  display: flex;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.mtab {
+  flex: 1;
+  padding: 9px 5px;
+  background: white;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mtab:last-child { border-right: none; }
+.mtab.on { background: var(--primary-l); color: var(--primary-d); }
+
+.mpanel { display: none; }
+.mpanel.on { display: block; }
+
+.upload-z {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .15s;
+  background: var(--bg);
+}
+/* A picker is inert while the file it was just given is being prepared —
+   photos resize in milliseconds, but a video re-encode runs in real time and
+   a second pick mid-way would interleave two recordings. */
+.upload-z.busy { opacity: .55; pointer-events: none; cursor: progress; }
+
+/* What happened to the file the resident just chose: how much smaller it got
+   and that its location data is gone, or why it could not be accepted. Reads
+   as reassurance, not as an error, unless it is one. */
+.media-note {
+  margin: 8px 0 0;
+  font-size: .82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.media-note.bad { color: var(--danger); font-weight: 600; }
+/* While a video is being prepared: the second line is the "keep this page open"
+   warning, so it needs the line break preserved and enough weight to be read
+   rather than skimmed past. */
+.media-note.busy {
+  font-weight: 600; color: var(--text);
+  padding: 9px 11px; border-radius: 9px;
+  background: var(--primary-l, var(--bg)); border: 1px solid var(--border);
+}
+/* A picker whose per-kind limit is reached: still visible, so the count reads
+   as information rather than the control vanishing. */
+.upload-z.is-full { opacity: .6; pointer-events: none; }
+
+/* Animated ellipsis on the first line of a busy note. The point is motion: a
+   percentage that stops climbing looks like a hang, and the tail of a video
+   re-encode genuinely has no progress to report. Something moving says "still
+   working" better than any number can. Respects reduced-motion. */
+.mn-main { font-variant-numeric: tabular-nums; }
+.mn-warn { display: block; margin-top: 3px; font-weight: 700; }
+.media-note.dots .mn-main::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em; text-align: left;
+  animation: media-dots 1.2s steps(4, end) infinite;
+}
+@keyframes media-dots {
+  0%   { content: ''; }
+  25%  { content: '·'; }
+  50%  { content: '··'; }
+  75%, 100% { content: '···'; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .media-note.dots::after { animation: none; content: '···'; }
+}
+
+/* Says plainly that files are shrunk on the device and the camera's location
+   tag is removed. This is a trust signal, not a technical footnote: someone
+   deciding whether to attach a photo of their own flooded home should be able
+   to see what happens to it. */
+.media-privacy {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin: 14px 0 0; padding: 9px 11px;
+  border: 1px solid var(--border); border-radius: 9px; background: var(--bg);
+  font-size: .82rem; line-height: 1.5; color: var(--muted);
+}
+.media-privacy svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
+
+.upload-z:hover,
+.upload-z.drag-over {
+  border-color: var(--primary);
+  background: var(--primary-l);
+}
+
+/* Long-press on iOS opens Save Image / Save Video, which is the mobile twin of
+   the ⋯ menu's Download. Same caveat as there: this removes the affordance, it
+   does not protect the file — every object is at a public URL. PDFs keep theirs
+   deliberately; a resident's FEMA letter is usually meant to be readable. */
+.sp-photo, .gal-item img, .gal-item video, .sp-video, #lbImg, .scard-hero img, .scard-hero video {
+  -webkit-touch-callout: none;
+}
+
+.uz-ico { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+.uz-lbl { font-size: .76rem; font-weight: 700; display: block; }
+.uz-sub { font-size: .79rem; color: var(--muted); margin-top: 2px; display: block; }
+
+.uz-cam {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--primary);
+  color: white;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.prevs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pw { position: relative; display: inline-block; }
+
+.p-img, .p-vid {
+  width: 68px;
+  height: 68px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.p-rm {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--danger);
+  color: white;
+  border: 2px solid white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: .76rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.rec-area { text-align: center; padding: 14px 0; }
+
+.rec-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--danger), #ff4757);
+  color: white;
+  font-size: 1.4rem;
+  margin: 0 auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  box-shadow: 0 4px 16px rgba(214, 59, 59, .35);
+}
+
+.rec-btn.recording { animation: recpulse 1.2s infinite; }
+
+@keyframes recpulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(214, 59, 59, .35); }
+  50% { box-shadow: 0 4px 28px rgba(214, 59, 59, .6), 0 0 0 8px rgba(214, 59, 59, .1); }
+}
+
+.rec-timer {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-status { font-size: .82rem; color: var(--muted); margin-top: 3px; }
+
+.rec-retry {
+  font-size: .82rem;
+  color: var(--danger);
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 6px;
+  display: block;
+  text-align: center;
+}
+
+/* .loc-opts/.loc-btn/.loc-ico/.loc-name/.loc-sub (Drop a Pin / My Location)
+   removed 17 August — REB-497/REB-507: dropping a pin confused testers and
+   GPS errored for Amy. Address search (.loc-addr-wrap, js/form.js) replaced
+   both; .loc-addr-wrap and its suggestion list live in css/layouts/atlas.css
+   beside the sidebar's own address bar, since that is where .addr-sugg/
+   .addr-opt are already defined and this reuses them rather than a second
+   copy. */
+.loc-st {
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: var(--bg);
+  font-size: .72rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.loc-st.ok { background: #E8F8F0; color: #1B7A45; font-weight: 700; }
+.loc-st.err { background: #FEE; color: var(--danger); }
+/* 18 August: coordinates captured but no neighbourhood matched — not an
+   error (the address is still saved), so amber rather than .err's red. */
+.loc-st.warn { background: #FEF3E2; color: var(--warn, #B45309); font-weight: 700; }
+
+/* Success */
+.success-wrap { text-align: center; padding: 28px 16px; }
+.s-ico { font-size: 3rem; display: block; margin-bottom: 12px; }
+.success-wrap h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+
+.success-wrap p {
+  font-size: .8rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.s-view {
+  margin-top: 18px;
+  padding: 11px 24px;
+  border-radius: 999px;
+  background: var(--primary-l);
+  color: var(--primary-d);
+  font-size: .82rem;
+  font-weight: 700;
+  border: 1.5px solid rgba(46, 180, 215, .3);
+  display: inline-block;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.s-view:hover { background: var(--primary); color: white; }
+
+
+/* ─── RESPONSIVE (shared sheets) ─── */
+@media (min-width: 768px) {
+  .sheet { border-radius: 20px; margin: auto; margin-bottom: 0; }
+  .overlay { align-items: center; }
+}
+
+/* ─── CONSENT PICKER (engine addition) ─── */
+.consent-list { display: flex; flex-direction: column; gap: 8px; }
+.consent-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; cursor: pointer; background: white;
+  transition: border-color .15s, background .15s;
+}
+.consent-opt input { margin-top: 3px; accent-color: var(--primary); }
+.consent-opt.sel { border-color: var(--primary); background: var(--primary-l); }
+.consent-ico { font-size: 1.05rem; line-height: 1.3; }
+.consent-body { display: flex; flex-direction: column; gap: 2px; }
+.consent-label { font-size: .78rem; font-weight: 700; }
+.consent-desc { font-size: .81rem; color: var(--muted); line-height: 1.45; }
+
+/* ─── Kiosk: attract screen ─── */
+.kiosk-attract {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  background: linear-gradient(160deg, var(--primary) 0%, var(--primary-d, var(--primary)) 100%);
+  color: var(--white);
+  cursor: pointer;
+}
+.kiosk-attract.show { display: flex; }
+
+.ka-inner { max-width: 560px; }
+
+.ka-logo {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 26px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .16);
+  border: 2px solid rgba(255, 255, 255, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display, var(--font));
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.ka-headline {
+  font-family: var(--font-display, var(--font));
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.ka-sub {
+  font-size: clamp(.9rem, 2.2vw, 1.05rem);
+  line-height: 1.65;
+  opacity: .92;
+  margin-bottom: 30px;
+}
+
+/* ─── Kiosk: rotating fun prompts ─── */
+.ka-prompts {
+  margin: 0 auto 30px;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ka-spark {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .6;
+}
+.ka-prompt {
+  font-family: var(--font-display, var(--font));
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-weight: 600;
+  line-height: 1.4;
+  min-height: 1.4em;
+  transition: opacity .32s ease;
+  text-wrap: balance;
+}
+@media (prefers-reduced-motion: reduce) { .ka-prompt { transition: none; } }
+
+.ka-start {
+  font-size: 1.15rem;
+  font-weight: 800;
+  padding: 18px 44px;
+  border-radius: 999px;
+  background: var(--cta, var(--white));
+  color: var(--cta-text, var(--primary-d, var(--primary)));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  animation: ka-pulse 2.4s ease-in-out infinite;
+}
+
+/* ─── Intake: fun-prompt "spark" chips (story step) ─── */
+.sparks { margin-bottom: 16px; }
+.sparks-lbl {
+  display: block;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.sparks-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.spark {
+  font-size: .78rem;
+  font-weight: 500;
+  line-height: 1.3;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--white, #fff);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.spark:hover { border-color: var(--primary); transform: translateY(-1px); }
+.spark.on { border-color: var(--primary); background: var(--primary-l, var(--bg)); color: var(--primary-d, var(--primary)); font-weight: 600; }
+
+@keyframes ka-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+.ka-org {
+  margin-top: 34px;
+  font-size: .78rem;
+  letter-spacing: .04em;
+  opacity: .75;
+}
+
+/* ─── Kiosk: idle warning ─── */
+.kiosk-warn {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, .65);
+  backdrop-filter: blur(3px);
+}
+.kiosk-warn.show { display: flex; }
+
+.kw-card {
+  background: var(--white);
+  border-radius: 18px;
+  padding: 30px 34px;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+}
+.kw-card h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; }
+.kw-card p { font-size: .84rem; color: var(--muted); line-height: 1.55; }
+
+.kw-count {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--danger);
+  margin: 14px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.kw-keep {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px 34px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--white);
+}
+
+/* ─── Kiosk: bigger touch targets in the intake ─── */
+body[data-mode="kiosk"] .form-sheet { max-width: 660px; }
+body[data-mode="kiosk"] .tc { min-height: 78px; }
+body[data-mode="kiosk"] .btn-nx,
+body[data-mode="kiosk"] .btn-bk { min-height: 54px; font-size: 1rem; }
+body[data-mode="kiosk"] .field { font-size: 1rem; }
+body[data-mode="kiosk"] .consent-opt { padding: 14px; }
+
+/* ─── First-visit hint (map mode) ─── */
+/* First-visit coach-mark: a dark bubble that sits just above the floating
+   Share button, with a tail pointing down at it (so the cue is clearly "do
+   this", not floating on its own). It tracks the CTA's position in atlas.css. */
+.welcome-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translate(-50%, 16px);
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(88vw, 300px);
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--text);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(15, 38, 48, .3);
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s, transform .35s;
+}
+.welcome-hint::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--text);
+}
+.welcome-hint.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.welcome-hint.bye { opacity: 0; transform: translate(-50%, 10px); pointer-events: none; }
+.welcome-hint button {
+  background: none;
+  color: rgba(255, 255, 255, .7);
+  font-size: .8rem;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.welcome-hint button:hover { color: #fff; }
+
+/* ─── Honest failure states ─── */
+.err-actions { display: flex; gap: 8px; margin-top: 10px; }
+.err-btn {
+  font-size: .74rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: var(--white);
+}
+.err-btn.ghost {
+  background: var(--white);
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+}
+
+/* ─── Success extras ─── */
+.s-ref {
+  margin-top: 12px;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.s-ref strong { color: var(--text); letter-spacing: .06em; }
+
+.s-handoff {
+  margin-top: 16px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--primary-d, var(--primary));
+}
+
+/* ─── Turnstile (renders only if a challenge is actually needed) ─── */
+.ts-box { display: flex; justify-content: center; margin-top: 10px; }
+.ts-note {
+  margin: 10px 0 0; text-align: center;
+  font-size: .78rem; line-height: 1.45; color: var(--muted);
+}
+.ts-box:empty { display: none; }
+
+/* Neighbourhood help under the location field: either a line saying we filled
+   it in, or a row of choices when one boundary covers several neighbourhoods
+   and picking for the resident would be a guess. Tapping one is faster than
+   typing and, more to the point, everyone who taps it spells it identically. */
+.f-auto { margin: 0 0 12px; font-size: .82rem; line-height: 1.5; color: var(--muted); }
+.nb-lbl { display: block; margin-bottom: 5px; font-weight: 700; color: var(--text); }
+.nb-pick {
+  display: inline-block; margin: 0 5px 5px 0; padding: 5px 11px;
+  font-size: .7rem; font-weight: 600; font-family: inherit;
+  color: var(--primary-d); background: #fff;
+  border: 1.5px solid var(--border); border-radius: 999px; cursor: pointer;
+}
+.nb-pick:hover { border-color: var(--primary); background: var(--primary-l); }
+.nb-pick.on { background: var(--primary-l); border-color: var(--primary); color: var(--primary-d); }

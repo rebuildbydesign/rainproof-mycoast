@@ -1,0 +1,679 @@
+/* ═══════════════════════════════════════════════════════════════
+   Rainproof NYC · Admin / moderation desk
+   On the SAME design system as the public map (css/layouts/atlas.css):
+   one palette, one six-rung type scale, one icon set. No bespoke sizes,
+   no emoji. Status is a reserved colour job that sits clear of the
+   story-type identity hues; only "pending" is saturated, because
+   pending is the work.
+   ═══════════════════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* palette: identical to the public map */
+  --primary: #2EB4D7;
+  --primary-d: #1A8BAA;
+  --primary-l: #E3FBFF;
+  --accent: #56AC52;
+  --danger: #D63B3B;
+  --teal: #0F7FA0;            /* the one "action" colour */
+  --teal-l: #E4F5FA;
+  --text: #0F2630;
+  --ink: #0F2630;
+  --muted: #4C626C;
+  --faint: #7C929B;
+  --border: #DCEAF0;
+  --line-2: #C6DBE3;
+  --bg: #EDF5F8;             /* page */
+  --page: #EDF5F8;
+  --surface: #fff;
+  --white: #fff;
+
+  /* story-type identity: used only for the type dot + label */
+  --t-experience: #FD2A37;
+  --t-future: #3D50FF;
+  --t-community: #12CB76;
+  --t-idea: #FB942A;
+
+  /* workflow status: reserved, clear of the identity hues */
+  --st-pend: #B45309;   --st-pend-bg: #FBF1E3;
+  --st-appr: #0E7C66;   --st-appr-bg: #E7F4EF;
+  --st-rej:  #8A6472;   --st-rej-bg:  #F2ECEF;
+
+  /* one type scale, six rungs, nothing between (matches atlas.css) */
+  --fs-display: 26px;
+  --fs-title: 18px;
+  --fs-lead: 15px;
+  --fs-body: 14.5px;
+  --fs-label: 13px;
+  --fs-micro: 11.5px;
+
+  /* Story palette fallbacks (REB-463). `applyTheme` overwrites both from
+     `storySchema.pinColor` / `pinColorDeep` at boot — these exist so the
+     console is never colourless in the beat before config lands, and so this
+     stylesheet is readable on its own. admin.html loads neither core.css nor
+     atlas.css, which is why they are declared again here rather than shared. */
+  --story-blue: #154f9f;
+  --story-blue-deep: #154f9f;
+  --story-blue-text: #154f9f;
+  --story-tile: #154f9f;
+  --story-tile-active: #2db4d9;
+  --filter-color: #3eb094;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font, 'Public Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  color: var(--ink);
+  background: var(--bg);
+  font-size: var(--fs-body);
+}
+
+button, input, textarea { font-family: inherit; outline: none; }
+button { border: none; cursor: pointer; }
+
+/* Every icon comes from the shared set (js/ui/icons.js), drawn in
+   currentColor. Default to 1em so a glyph tracks the text beside it. */
+.ico { flex: none; }
+button .ico, a .ico, .sc-status .ico, .rc-media .ico, .sc-contact .ico { vertical-align: -0.12em; }
+
+
+/* ─── HEADER ─── */
+.hdr {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 16px rgba(46, 180, 215, .22);
+}
+.hdr-l { display: flex; align-items: center; gap: 11px; }
+.hdr-logo {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255, 255, 255, .22);
+  border: 1.5px solid rgba(255, 255, 255, .4);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: var(--fs-micro); color: #fff; letter-spacing: -.03em;
+}
+/* Real wordmark (branding.logoUrl): drop the tile chrome and let the mark sit
+   on the gradient, matching the public map's header. The Rainproof lockup is a
+   wide horizontal wordmark (~9.7:1), so it is sized by height. */
+.hdr-logo.has-img {
+  background: none; border: none; border-radius: 0;
+  width: auto; height: 20px; display: block; align-self: center;
+}
+.hdr-logo.has-img img { height: 100%; width: auto; max-width: 186px; object-fit: contain; display: block; }
+.hdr-name { font-size: var(--fs-title); font-weight: 800; color: #fff; letter-spacing: -.015em; }
+.hdr-badge {
+  background: rgba(255, 255, 255, .18);
+  color: rgba(255, 255, 255, .92);
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .3);
+}
+.hdr-r { display: flex; align-items: center; gap: 8px; }
+/* The four stat tiles, folded into one line (REB-446). It only reports the
+   things that can be wrong, so an empty queue makes it go quiet. */
+.hdr-state {
+  font-size: var(--fs-micro); font-weight: 600; color: rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .16); border-radius: 999px; padding: 4px 12px; white-space: nowrap;
+}
+.hdr-state strong { font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.hdr-state.warn { background: #FBF1E3; color: var(--st-pend); }
+.hdr-state.warn strong { color: var(--st-pend); }
+.hdr-user { font-size: var(--fs-micro); color: rgba(255, 255, 255, .82); margin-right: 4px; }
+.hdr-user strong { color: #fff; font-weight: 700; }
+
+.btn-logout, .btn-map {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-micro); font-weight: 700;
+  padding: 6px 11px; border-radius: 8px;
+  background: rgba(255, 255, 255, .16); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .26);
+  text-decoration: none; transition: background .15s;
+}
+.btn-map .ico { width: 14px; height: 14px; }
+.btn-logout { background: rgba(255, 255, 255, .28); }
+.btn-logout:hover, .btn-map:hover { background: rgba(255, 255, 255, .34); }
+
+
+/* ─── LOGIN ─── */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 20px; }
+.login-card { width: 380px; max-width: 100%; background: var(--surface); border-radius: 16px; box-shadow: 0 8px 40px rgba(15, 38, 48, .12); overflow: hidden; }
+.login-top { background: linear-gradient(135deg, var(--primary), var(--accent)); padding: 28px 28px 22px; }
+.login-logo {
+  width: 46px; height: 46px; border-radius: 12px;
+  background: rgba(255, 255, 255, .25);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: var(--fs-lead); color: #fff; margin-bottom: 12px;
+}
+.login-logo.has-img {
+  background: none; border-radius: 0;
+  width: auto; height: 26px; max-width: 100%; display: block; margin-bottom: 14px;
+}
+.login-logo.has-img img { height: 100%; width: auto; max-width: 100%; object-fit: contain; display: block; }
+.login-title { font-size: var(--fs-title); font-weight: 800; color: #fff; letter-spacing: -.015em; }
+.login-sub { font-size: var(--fs-micro); color: rgba(255, 255, 255, .8); margin-top: 3px; }
+.login-body { padding: 24px 28px; }
+.lbl { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); display: block; margin-bottom: 7px; }
+.linput {
+  width: 100%; padding: 11px 14px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  font-size: var(--fs-body); color: var(--ink);
+  transition: border-color .15s, background .15s; margin-bottom: 16px;
+}
+.linput::placeholder { color: var(--faint); }
+.linput:focus { border-color: var(--primary); background: #fff; }
+.login-err {
+  background: #FCECEC; border: 1px solid #F3C9C9; border-radius: 8px;
+  padding: 9px 12px; font-size: var(--fs-micro); color: var(--danger);
+  margin-bottom: 12px; display: none;
+}
+.login-err.show { display: block; }
+.btn-login {
+  width: 100%; padding: 13px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; font-size: var(--fs-label); font-weight: 800;
+  box-shadow: 0 4px 14px rgba(46, 180, 215, .28); transition: filter .2s, transform .2s;
+}
+.btn-login:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.login-note { font-size: var(--fs-micro); color: var(--faint); text-align: center; margin-top: 12px; line-height: 1.5; }
+
+
+/* ─── SEARCH ───
+   The lookup sections need a way to look something up. Sits with the view
+   title because it filters whichever section is open, not all of them. */
+.qsearch {
+  margin-left: auto; display: flex; align-items: center; gap: 7px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 999px; padding: 0 14px; min-width: 250px;
+  transition: border-color .15s;
+}
+.qsearch:focus-within { border-color: var(--primary); }
+.qsearch .ico { width: 14px; height: 14px; color: var(--faint); flex: none; }
+.qsearch input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  padding: 8px 0; font-size: var(--fs-label); color: var(--ink);
+}
+.qsearch input::placeholder { color: var(--faint); }
+.qsearch input::-webkit-search-cancel-button { cursor: pointer; }
+
+
+/* ─── THE CONSOLE (REB-446) ───
+   Judy: "it doesnt look like a professional grade control center. think
+   efficiency, categories, previews, name of person submitted". So: a left rail
+   for where you are, a table for the work, and the story on its own page. The
+   queue-row CSS that used to sit here went with the rows. `.sc-cat` stays
+   because consentBadge() still uses it. */
+
+.shell { display: flex; align-items: flex-start; min-height: calc(100vh - 56px); }
+
+.rail {
+  width: 190px; flex: none; align-self: stretch;
+  border-right: 1px solid var(--border); background: var(--surface);
+  padding: 12px 10px; display: flex; flex-direction: column; gap: 1px;
+  position: sticky; top: 0;
+}
+.rail-h {
+  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--faint); padding: 12px 8px 5px;
+}
+.rail-h:first-child { padding-top: 2px; }
+.rl {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 8px; border-radius: 7px; border: none; background: none;
+  font-size: var(--fs-label); font-weight: 650; color: var(--ink);
+  text-align: left; text-decoration: none; cursor: pointer;
+  transition: background .13s, color .13s;
+}
+.rl:hover { background: var(--page); }
+.rl .ico { width: 14px; height: 14px; color: var(--faint); flex: none; }
+.rl .n { margin-left: auto; font-size: var(--fs-micro); font-weight: 700; color: var(--faint); font-variant-numeric: tabular-nums; }
+.rl .sq { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+.rl .sq.pend { background: var(--st-pend); }
+.rl .sq.appr { background: var(--st-appr); }
+.rl .sq.rej { background: var(--st-rej); }
+.rl .sq.all { background: var(--line-2); }
+.rl.on { background: var(--st-pend-bg); color: var(--st-pend); }
+.rl.on .n { color: var(--st-pend); }
+.rl.on .ico { color: var(--st-pend); }
+
+.pane { flex: 1; min-width: 0; padding: 18px 22px 28px; }
+
+.pane-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.pane-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.pane-title strong { font-size: var(--fs-title); font-weight: 800; letter-spacing: -.015em; }
+#viewSub { font-size: var(--fs-micro); color: var(--muted); font-weight: 600; }
+
+/* ── the table ── */
+.tablewrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+/* Fixed layout, not auto. With auto, the story column sizes to its own text and
+   pushes the action buttons off the right edge, which is exactly the bug that
+   makes a table feel broken. Fixed means the widths below are the widths, the
+   story column takes whatever is left, and the excerpt truncates into it. */
+.qtable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.qtable th {
+  text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--faint); padding: 8px 8px;
+  border-bottom: 1px solid var(--border); background: var(--page);
+  white-space: nowrap; position: sticky; top: 0; z-index: 1;
+}
+.qtable th.sortable { cursor: pointer; user-select: none; }
+.qtable th.sortable:hover { color: var(--teal); }
+.qtable td { padding: 9px 8px; border-bottom: 1px solid var(--page); vertical-align: middle; }
+.qtable tr:last-child td { border-bottom: none; }
+.qtable tr { cursor: pointer; }
+.qtable tbody tr:hover td { background: #F7FCFD; }
+.qtable tr.sel td { background: var(--teal-l); }
+.qtable tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--teal); }
+.qtable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Widened from 24px for the raindrop that replaced the 9px colour dot. */
+.qtable td.c-type, .qtable th.c-type { width: 30px; padding-left: 12px; padding-right: 0; }
+.qtable tr.row-pending td:first-child { box-shadow: inset 3px 0 0 var(--st-pend); }
+.qtable tr.row-approved td:first-child { box-shadow: inset 3px 0 0 var(--st-appr); }
+.qtable tr.row-rejected td:first-child { box-shadow: inset 3px 0 0 var(--st-rej); }
+.qtable tr.row-rejected { opacity: .62; }
+.qtable tr.row-rejected:hover { opacity: 1; }
+
+/* `.c-dot` was a 9px circle in the story type's own colour. Replaced in
+   REB-463 by the same raindrop the map, the pane, the cards and the form draw:
+   one blue, with the type carried by the glyph inside it. A colour dot could
+   not say which of four types a row was without the reader memorising a legend
+   the console does not have. The title attribute still names the type, and the
+   story page spells it out in words beside the mark. */
+.c-drop { display: inline-flex; line-height: 0; flex: none; }
+.who { font-weight: 700; white-space: nowrap; font-size: var(--fs-label); }
+.who.byline { font-weight: 650; color: var(--muted); }
+.who.anon { font-weight: 600; color: var(--faint); font-style: italic; }
+/* The excerpt is a reminder of which story this is, not the story. One line,
+   because a row that grows to fit its text stops being a row. It takes whatever
+   width the fixed columns leave and truncates into it. */
+.excerpt { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-label); }
+.excerpt::before { content: '\201C'; }
+.excerpt::after { content: '\201D'; }
+.where { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-micro); }
+.none { color: var(--faint); font-style: italic; }
+.idc { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--fs-micro); color: var(--faint); }
+.wait { font-size: var(--fs-micro); color: var(--muted); font-weight: 700; }
+.wait.old { color: var(--st-pend); }
+.wait.quiet { font-weight: 600; color: var(--faint); }
+
+/* The chips shrink rather than being cut in half at the column edge: a tag
+   truncated with an ellipsis reads as "there is more"; a tag sliced mid-word
+   reads as a broken layout. The count and the advocacy flag never shrink,
+   because they are the two things you cannot infer from what is left. */
+.tags { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+.tg {
+  font-size: var(--fs-micro); font-weight: 650; color: var(--ink); background: var(--page);
+  border-radius: 4px; padding: 2px 7px; white-space: nowrap;
+  flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+.tg.more { color: var(--faint); background: none; padding: 2px 0; flex: none; }
+.med { font-size: var(--fs-micro); color: var(--muted); white-space: nowrap; }
+.med.none { color: var(--line-2); font-style: normal; }
+.flag {
+  font-size: var(--fs-micro); font-weight: 800; color: var(--st-rej); background: var(--st-rej-bg);
+  border-radius: 999px; padding: 1px 8px; white-space: nowrap; flex: none;
+}
+
+.acts { display: flex; gap: 5px; justify-content: flex-end; }
+.ab {
+  font-size: var(--fs-micro); font-weight: 800; border-radius: 6px; padding: 5px 10px;
+  border: 1.5px solid var(--st-appr); color: var(--st-appr); background: var(--surface);
+  white-space: nowrap; transition: background .13s;
+}
+.ab:hover { background: var(--st-appr-bg); }
+.ab.r { border-color: var(--line-2); color: var(--st-rej); }
+.ab.r:hover { background: var(--st-rej-bg); border-color: var(--st-rej); }
+.ab.ghost { border-color: var(--line-2); color: var(--muted); }
+.ab.ghost:hover { background: var(--page); color: var(--ink); }
+.ab.del { border-color: var(--line-2); color: var(--faint); padding: 5px 7px; }
+.ab.del:hover { background: #FCECEC; color: var(--danger); border-color: rgba(214, 59, 59, .3); }
+.ab .ico { width: 13px; height: 13px; display: block; }
+
+/* Nine columns do not fit on a laptop. Rather than shrink every column until
+   the story excerpt is six characters, the two that a moderator can most easily
+   do without step aside: the id is on the story page, and the media count is
+   one row-click away. Both come back on a wide screen. */
+@media (max-width: 1500px) { .qtable .idc, .qtable th.idc { display: none; } }
+@media (max-width: 1150px) { .qtable .c-med, .qtable th.c-med { display: none; } }
+
+/* A shortcut nobody knows about is not a feature. */
+.keybar { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 4px 0; font-size: var(--fs-micro); color: var(--faint); }
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px; background: var(--page); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px; color: var(--muted); margin-right: 3px;
+}
+
+/* ── the story page: same pane, its own address ── */
+.sp-head {
+  display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border); border-bottom: none;
+  border-radius: 10px 10px 0 0; padding: 14px 18px;
+}
+.sp-back {
+  display: inline-flex; align-items: center; gap: 3px; background: none; border: none;
+  font-size: var(--fs-micro); font-weight: 800; color: var(--teal); cursor: pointer;
+  padding: 3px 6px 3px 0; white-space: nowrap;
+}
+.sp-back .ico { width: 13px; height: 13px; }
+.sp-back:hover { text-decoration: underline; }
+.sp-id { flex: 1; min-width: 0; }
+.sp-name { font-size: var(--fs-title); font-weight: 800; letter-spacing: -.015em; }
+.sp-as { font-size: var(--fs-micro); font-weight: 600; color: var(--faint); margin-left: 6px; }
+.sp-sub { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: var(--fs-micro); color: var(--muted); margin-top: 4px; }
+.sp-status {
+  font-size: var(--fs-micro); font-weight: 800; border-radius: 999px; padding: 4px 11px; white-space: nowrap;
+}
+.sp-status.pending { background: var(--st-pend-bg); color: var(--st-pend); }
+.sp-status.approved { background: var(--st-appr-bg); color: var(--st-appr); }
+.sp-status.rejected { background: var(--st-rej-bg); color: var(--st-rej); }
+
+.sp-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) 268px;
+  background: var(--surface); border: 1px solid var(--border); border-top: 1px solid var(--border);
+}
+.sp-main { padding: 18px; min-width: 0; }
+.sp-side { border-left: 1px solid var(--border); background: var(--page); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.sp-lbl {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--faint); margin-bottom: 6px;
+}
+.sp-lbl .ico { width: 11px; height: 11px; }
+.sp-story { font-size: var(--fs-lead); line-height: 1.65; color: var(--ink); max-width: 68ch; }
+.sp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-top: 16px; }
+.sp-cell { background: var(--page); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; }
+.sp-k { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); }
+.sp-v { font-size: var(--fs-label); font-weight: 700; margin-top: 2px; }
+.sp-quiet { font-size: var(--fs-micro); color: var(--muted); line-height: 1.5; }
+.sp-quiet a { color: var(--teal); text-decoration: none; }
+.sp-quiet a:hover { text-decoration: underline; }
+.sp-block { margin-top: 18px; }
+
+.sp-foot {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 10px 10px; padding: 12px 18px;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--st-appr); color: #fff; border: 1.5px solid var(--st-appr); border-radius: 8px;
+  padding: 8px 14px; font-size: var(--fs-label); font-weight: 800;
+}
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-primary kbd { background: rgba(255, 255, 255, .22); border-color: transparent; color: #fff; margin: 0 0 0 3px; }
+.btn-quiet {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); color: var(--muted); border: 1.5px solid var(--line-2);
+  border-radius: 8px; padding: 8px 14px; font-size: var(--fs-label); font-weight: 700;
+}
+.btn-quiet:hover { background: var(--page); color: var(--ink); }
+.btn-quiet:disabled { opacity: .45; cursor: not-allowed; }
+.btn-quiet:disabled:hover { background: var(--surface); color: var(--muted); }
+.btn-quiet.danger:hover { background: #FCECEC; color: var(--danger); border-color: rgba(214, 59, 59, .3); }
+.btn-primary .ico, .btn-quiet .ico { width: 14px; height: 14px; }
+.btn-quiet kbd { margin: 0 0 0 3px; }
+.sp-count { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: var(--fs-micro); color: var(--muted); font-variant-numeric: tabular-nums; }
+.sp-nav {
+  display: inline-flex; background: var(--surface); border: 1.5px solid var(--line-2);
+  border-radius: 7px; padding: 5px 7px; color: var(--muted);
+}
+.sp-nav .ico { width: 13px; height: 13px; display: block; }
+.sp-nav:hover:not(:disabled) { background: var(--page); color: var(--ink); }
+.sp-nav:disabled { opacity: .35; cursor: not-allowed; }
+
+.sc-cat { font-size: var(--fs-micro); font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--page); color: var(--muted); }
+
+/* Still the button in the export and alerts modals. */
+.btn-approve {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: var(--fs-label); font-weight: 800; border-radius: 8px;
+  border: 1.5px solid transparent; transition: filter .15s, background .15s, color .15s, border-color .15s;
+  flex: 1; padding: 8px 12px; background: var(--st-appr); color: #fff;
+}
+.btn-approve .ico { width: 14px; height: 14px; }
+.btn-approve:hover { filter: brightness(1.07); }
+
+
+/* ─── MODALS (export, alerts, history) ───
+   The story detail modal is gone: a story is a page now, at its own address.
+   What is left here are the three utilities that genuinely are interruptions. */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 38, 48, .5); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 16px; max-width: 560px; width: 100%;
+  max-height: 86vh; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(15, 38, 48, .28); animation: mup .25s ease;
+}
+@keyframes mup { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+.modal-section { margin-bottom: 18px; }
+.modal-section:last-child { margin-bottom: 0; }
+.modal-lbl { font-size: var(--fs-micro); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin-bottom: 8px; }
+
+.mc-key { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--faint); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+.mc-key .ico { width: 11px; height: 11px; }
+.mc-val { font-size: var(--fs-micro); font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.mc-val a { color: var(--teal); text-decoration: none; }
+.mc-val a:hover { text-decoration: underline; }
+
+/* private-contact banner + the "what the public sees" city record */
+.modal-private { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; color: var(--st-rej); background: var(--st-rej-bg); padding: 3px 9px; border-radius: 999px; }
+.modal-private .ico { width: 12px; height: 12px; }
+.modal-lbl-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.modal-lbl-row .modal-lbl { margin: 0; }
+.modal-city { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 14px; padding: 13px 15px; background: var(--page); border-radius: 12px; align-items: start; }
+.modal-city-div { background: var(--line-2); align-self: stretch; }
+.modal-city-n { font-size: var(--fs-title); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.modal-city-l { font-size: var(--fs-micro); color: var(--muted); font-weight: 700; line-height: 1.35; margin-top: 4px; }
+.modal-city-sub { display: block; font-size: 10.5px; color: var(--faint); font-weight: 600; margin-top: 4px; }
+.modal-city-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+
+.modal-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mg-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: opacity .15s; }
+.mg-img:hover { opacity: .9; }
+
+
+
+/* ─── EMPTY / LOADING ─── */
+.empty { padding: 52px 24px; text-align: center; color: var(--muted); font-size: var(--fs-label); }
+.empty-ico { display: inline-flex; color: var(--line-2); margin-bottom: 12px; }
+.empty-ico .ico { width: 40px; height: 40px; }
+.loading { padding: 52px; text-align: center; color: var(--muted); font-size: var(--fs-label); }
+
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--ink); color: #fff; padding: 12px 16px; border-radius: 11px;
+  font-size: var(--fs-label); font-weight: 600; max-width: 360px;
+  box-shadow: 0 10px 30px rgba(15, 38, 48, .28);
+  transform: translateY(80px); opacity: 0; transition: transform .28s, opacity .28s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast .ico { width: 16px; height: 16px; flex: none; }
+.toast.success .ico { color: #5FD3A9; }
+.toast.error .ico { color: #FF8A8A; }
+.toast.info .ico { color: #7FD6EC; }
+
+
+/* ─── EDIT (card + modal) ─── */
+.btn-edit {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 9px; background: var(--surface); color: var(--muted);
+  font-size: var(--fs-label); font-weight: 800; border: 1.5px solid var(--line-2); transition: border-color .15s, color .15s;
+}
+.btn-edit:hover { color: var(--ink); border-color: var(--faint); }
+.edit-modal { max-width: 640px; }
+.edit-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border); }
+.edit-head h2 { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-title); font-weight: 800; letter-spacing: -.015em; }
+.edit-head h2 .ico { width: 17px; height: 17px; color: var(--teal); }
+.btn-close-x {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--page); color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center; transition: background .15s, color .15s;
+}
+.btn-close-x .ico { width: 15px; height: 15px; }
+.btn-close-x:hover { background: var(--border); color: var(--ink); }
+.edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.edit-section { display: flex; flex-direction: column; }
+.edit-lbl { font-size: var(--fs-micro); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); margin-bottom: 5px; }
+.edit-input, .edit-textarea {
+  width: 100%; padding: 9px 12px; border-radius: 9px; border: 1.5px solid var(--border);
+  background: var(--bg); font-size: var(--fs-label); color: var(--ink); transition: border-color .15s, background .15s;
+}
+.edit-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.edit-input:focus, .edit-textarea:focus { border-color: var(--primary); background: #fff; }
+
+.edit-media-list { margin-bottom: 10px; }
+.edit-no-media { padding: 12px; text-align: center; font-size: var(--fs-micro); color: var(--muted); background: var(--bg); border-radius: 9px; border: 1px dashed var(--border); }
+.edit-media-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 5px; transition: border-color .15s; }
+.edit-media-item:hover { border-color: var(--line-2); }
+.edit-media-thumb { width: 46px; height: 46px; border-radius: 7px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); }
+.edit-media-icon { width: 46px; height: 46px; border-radius: 7px; background: var(--page); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--border); color: var(--muted); }
+.edit-media-icon .ico { width: 20px; height: 20px; }
+.edit-media-info { flex: 1; min-width: 0; }
+.edit-media-name { font-size: var(--fs-micro); font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edit-media-type { font-size: 10.5px; color: var(--faint); margin-top: 1px; }
+.edit-media-rm { width: 26px; height: 26px; border-radius: 7px; background: var(--st-rej-bg); color: var(--st-rej); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--line-2); transition: background .15s, color .15s; }
+.edit-media-rm .ico { width: 13px; height: 13px; }
+.edit-media-rm:hover { background: var(--danger); color: #fff; }
+
+.edit-upload-zone { border: 2px dashed var(--border); border-radius: 11px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; background: var(--bg); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.edit-upload-zone:hover, .edit-upload-zone.drag-over { border-color: var(--primary); background: var(--primary-l); }
+.edit-upload-zone .ico { width: 22px; height: 22px; color: var(--teal); }
+.edit-upload-label { font-size: var(--fs-label); font-weight: 800; color: var(--ink); }
+.edit-upload-hint { font-size: var(--fs-micro); color: var(--muted); }
+
+
+/* ─── NOTIFY SETTINGS (owners) ─── */
+.notify-modes { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.notify-mode { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-size: var(--fs-label); }
+.notify-mode:has(input:checked) { border-color: var(--teal); background: var(--teal-l); }
+.notify-mode input { margin-top: 2px; accent-color: var(--teal); }
+.notify-mode div { display: flex; flex-direction: column; gap: 2px; }
+.notify-mode strong { font-weight: 800; }
+.notify-mode span { color: var(--muted); font-size: var(--fs-micro); }
+.nlog-row { display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-micro); color: var(--muted); padding: 5px 0; border-bottom: 1px solid var(--border); }
+.nlog-status { font-weight: 800; text-transform: uppercase; font-size: 10.5px; letter-spacing: .04em; }
+.nlog-status.queued { color: var(--st-appr); }
+.nlog-status.skipped { color: var(--st-pend); }
+.nlog-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+
+.modal-note { font-size: var(--fs-micro); color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+.export-actions { display: flex; flex-direction: column; gap: 8px; }
+.export-actions .btn-approve { flex: none; width: 100%; justify-content: flex-start; padding: 11px 14px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line-2); }
+.export-actions .btn-approve .ico { color: var(--teal); }
+.export-actions .btn-approve:hover { filter: none; border-color: var(--teal); background: var(--teal-l); }
+
+
+/* ─── MODERATOR EDITING + ITS TRAIL (REB-441) ───
+   The form itself reuses .edit-grid / .edit-section / .edit-lbl / .edit-input /
+   .edit-textarea above, which were drawn for this modal and had been sitting
+   unused. What follows is only the parts that did not exist: the trail banner,
+   the chip pickers, the id bar, and the history views. */
+
+/* the "Edited" mark in the table's date cell, quiet enough not to compete */
+.sc-edited { display: inline-flex; align-items: center; gap: 3px; margin-left: 5px; font-size: var(--fs-micro); font-weight: 700; color: var(--faint); }
+.sc-edited .ico { width: 11px; height: 11px; margin: 0; }
+
+/* "Edited by X on date", at the top of the detail modal */
+.ed-trail {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  background: var(--st-pend-bg); border: 1px solid rgba(180, 83, 9, .22);
+  border-radius: 10px; padding: 9px 12px; margin-bottom: 16px;
+}
+.ed-trail-l { display: flex; align-items: center; gap: 7px; font-size: var(--fs-micro); color: var(--st-pend); font-weight: 600; }
+.ed-trail-l strong { font-weight: 800; }
+.ed-trail-l .ico { width: 13px; height: 13px; flex: none; }
+.ed-trail-r { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.ed-link {
+  display: inline-flex; align-items: center; gap: 4px; background: none; border: none;
+  padding: 2px 4px; font-size: var(--fs-micro); font-weight: 800; color: var(--teal); cursor: pointer;
+}
+.ed-link:hover { text-decoration: underline; }
+.ed-link .ico { width: 12px; height: 12px; }
+
+/* story id + submitted date, in both the review and the edit view */
+.ed-idbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+.ed-idcell { background: var(--page); border-radius: 9px; padding: 9px 11px; min-width: 0; }
+.ed-id { display: flex; align-items: center; gap: 6px; }
+.ed-id code { font-size: var(--fs-micro); font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* form extras */
+.ed-wide { grid-column: 1 / -1; }
+.ed-hint { font-size: var(--fs-micro); color: var(--muted); line-height: 1.45; margin-top: 5px; }
+.ed-note { font-size: var(--fs-micro); color: var(--teal); font-weight: 700; line-height: 1.45; margin-top: 5px; }
+.ed-note:empty { margin: 0; }
+.ed-req { font-weight: 700; color: var(--st-pend); letter-spacing: 0; text-transform: none; }
+
+.ed-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.ed-chip {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  padding: 6px 10px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: var(--surface); font-size: var(--fs-micro); font-weight: 700; color: var(--muted);
+}
+.ed-chip input { accent-color: var(--teal); margin: 0; }
+.ed-chip.on { border-color: var(--teal); background: var(--teal-l); color: var(--teal); }
+
+/* the story as submitted: read-only on purpose */
+.ed-orig { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; }
+.ed-orig-row { background: var(--surface); padding: 9px 12px; }
+.ed-orig-k { font-size: var(--fs-micro); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); margin-bottom: 3px; }
+.ed-orig-v { font-size: var(--fs-label); color: var(--ink); line-height: 1.55; }
+
+/* the change log */
+.trail-list { display: flex; flex-direction: column; }
+.trail-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.trail-row:last-child { border-bottom: none; }
+.trail-when { font-size: var(--fs-micro); color: var(--faint); font-weight: 700; line-height: 1.4; }
+.trail-what { min-width: 0; }
+.trail-field { font-size: var(--fs-label); font-weight: 800; color: var(--ink); }
+.trail-diff { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-micro); color: var(--muted); line-height: 1.5; margin-top: 3px; }
+.trail-diff .ico { width: 12px; height: 12px; flex: none; margin-top: 2px; color: var(--faint); }
+.trail-old { color: var(--st-rej); text-decoration: line-through; text-decoration-color: rgba(138, 100, 114, .5); }
+.trail-new { color: var(--st-appr); font-weight: 700; }
+.trail-old em, .trail-new em { font-style: normal; color: var(--faint); text-decoration: none; }
+.trail-who { font-size: var(--fs-micro); color: var(--faint); margin-top: 4px; }
+
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1000px) {
+  /* The rail becomes a strip across the top: a 190px column is a third of a
+     tablet, and the sections still need to be one tap away. */
+  .shell { flex-direction: column; }
+  .rail {
+    width: auto; flex-direction: row; flex-wrap: wrap; align-self: auto; position: static;
+    border-right: none; border-bottom: 1px solid var(--border); gap: 4px; padding: 8px 10px;
+  }
+  .rail-h { display: none; }
+  .rl { width: auto; }
+  .rl .n { margin-left: 3px; }
+  .pane { padding: 14px; width: 100%; }
+  /* The table keeps its columns and scrolls sideways inside its own box rather
+     than collapsing: a half-width column is worse than one you scroll to. */
+  .qtable { min-width: 900px; }
+  .sp-body { grid-template-columns: 1fr; }
+  .sp-side { border-left: none; border-top: 1px solid var(--border); }
+}
+
+@media (max-width: 700px) {
+  .qsearch { margin-left: 0; width: 100%; }
+  .pane-top { align-items: stretch; }
+  .edit-grid { grid-template-columns: 1fr; }
+  .ed-idbar { grid-template-columns: 1fr; }
+  .trail-row { grid-template-columns: 1fr; gap: 2px; }
+  .keybar { display: none; }   /* no keyboard to shortcut with */
+  .hdr-user { display: none; }
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rainproof — device check</title>
+<style>
+  body{font:15px/1.5 -apple-system,system-ui,sans-serif;margin:0;padding:20px;background:#EDF5F8;color:#0F2630}
+  h1{font-size:19px;margin:0 0 4px}
+  p.sub{margin:0 0 18px;color:#4C626C;font-size:13px}
+  .row{display:flex;gap:10px;padding:11px 12px;background:#fff;border:1px solid #DCEAF0;border-radius:10px;margin-bottom:8px;align-items:flex-start}
+  .k{font-weight:700;flex:1}
+  .v{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .yes{color:#2E7D32;font-weight:800}.no{color:#D63B3B;font-weight:800}
+  .verdict{margin-top:16px;padding:14px;border-radius:10px;font-weight:600}
+  .ok{background:#E8F5E9;border:1px solid #2E7D32}
+  .bad{background:#FDECEA;border:1px solid #D63B3B}
+  textarea{width:100%;height:150px;margin-top:14px;font:12px ui-monospace,monospace;border:1px solid #DCEAF0;border-radius:8px;padding:10px;background:#fff}
+  button{font:600 14px inherit;padding:11px 16px;border-radius:999px;border:1.5px solid #2EB4D7;background:#fff;color:#1A8BAA;width:100%;margin-top:10px}
+</style>
+<body>
+<h1>Rainproof device check</h1>
+<p class="sub">Tells us whether this phone can shrink a video before uploading. Nothing is sent anywhere.</p>
+<div id="out"></div>
+<div id="verdict"></div>
+<textarea id="copy" readonly></textarea>
+<button id="btn">Copy results</button>
+<script type="module">
+const out = document.getElementById('out');
+const row = (k, v, good) => {
+  out.insertAdjacentHTML('beforeend',
+    `<div class="row"><span class="k">${k}</span><span class="v ${good===true?'yes':good===false?'no':''}">${v}</span></div>`);
+};
+
+const has = {
+  MediaRecorder: typeof MediaRecorder !== 'undefined',
+  canvasCaptureStream: typeof HTMLCanvasElement.prototype.captureStream === 'function',
+  createImageBitmap: typeof createImageBitmap === 'function',
+  requestVideoFrameCallback: typeof HTMLVideoElement.prototype.requestVideoFrameCallback === 'function',
+  WebAudio: !!(window.AudioContext || window.webkitAudioContext),
+};
+const mimes = ['video/mp4;codecs=avc1','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+const supported = has.MediaRecorder
+  ? mimes.filter(t => { try { return MediaRecorder.isTypeSupported(t); } catch { return false; } })
+  : [];
+
+row('MediaRecorder', has.MediaRecorder ? 'yes' : 'no', has.MediaRecorder);
+row('canvas.captureStream', has.canvasCaptureStream ? 'yes' : 'no', has.canvasCaptureStream);
+row('Video format it can write', supported[0] || 'none', supported.length > 0);
+row('createImageBitmap', has.createImageBitmap ? 'yes' : 'no', has.createImageBitmap);
+row('requestVideoFrameCallback', has.requestVideoFrameCallback ? 'yes' : 'no', has.requestVideoFrameCallback);
+row('Web Audio', has.WebAudio ? 'yes' : 'no', has.WebAudio);
+row('Screen', `${screen.width}×${screen.height} @${window.devicePixelRatio}x`);
+
+// The real test: can it actually produce a video file?
+let live = 'not attempted';
+try {
+  if (has.MediaRecorder && has.canvasCaptureStream && supported[0]) {
+    const c = Object.assign(document.createElement('canvas'), {width: 320, height: 240});
+    const cx = c.getContext('2d');
+    const rec = new MediaRecorder(c.captureStream(15), {mimeType: supported[0], videoBitsPerSecond: 400000});
+    const parts = [];
+    rec.ondataavailable = e => e.data.size && parts.push(e.data);
+    const done = new Promise(r => { rec.onstop = r; });
+    rec.start(100);
+    await new Promise(r => { let n = 0; const iv = setInterval(() => {
+      cx.fillStyle = `hsl(${n*24} 70% 50%)`; cx.fillRect(0,0,320,240);
+      if (++n > 20) { clearInterval(iv); r(); } }, 50); });
+    rec.stop(); await done;
+    const size = new Blob(parts).size;
+    live = size > 0 ? `yes — wrote ${Math.round(size/1024)} KB` : 'no — produced an empty file';
+  } else {
+    live = 'no — missing a required feature above';
+  }
+} catch (e) { live = 'no — ' + (e.message || e); }
+row('Actually encoded a test video', live, live.startsWith('yes'));
+
+const canReencode = live.startsWith('yes');
+document.getElementById('verdict').innerHTML =
+  `<div class="verdict ${canReencode ? 'ok' : 'bad'}">${canReencode
+    ? 'This phone CAN shrink videos before upload.'
+    : 'This phone CANNOT shrink videos in the browser. Large clips will be refused rather than compressed.'}</div>`;
+
+const report = { ua: navigator.userAgent, ...has, mimeSupported: supported, liveEncodeTest: live, canReencode };
+document.getElementById('copy').value = JSON.stringify(report, null, 1);
+document.getElementById('btn').onclick = () => {
+  const t = document.getElementById('copy');
+  t.select(); t.setSelectionRange(0, 99999);
+  navigator.clipboard?.writeText(t.value);
+  document.getElementById('btn').textContent = 'Copied — paste it to Claude';
+};
+</script>
+</body>
+</html>

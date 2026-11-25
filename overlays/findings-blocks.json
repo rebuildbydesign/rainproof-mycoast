@@ -1,0 +1,131 @@
+{
+ "built": "2026-08-13",
+ "pulledOn": "2026-08-13",
+ "currentThrough": "2026-07-29",
+ "frozen": true,
+ "unit": "census block",
+ "unitNote": "2020 census blocks as published by NYC City Planning, clipped to the shoreline. Real, street-bounded geographies with a public GEOID, not a grid. Every block figure on this map counts these.",
+ "source": "https://data.cityofnewyork.us/resource/erm2-nwe9.json",
+ "blocksSource": "https://data.cityofnewyork.us/resource/wmsu-5muw",
+ "since": "2021-09-01",
+ "newestReport": "2026-07-29",
+ "idaYears": 5,
+ "radiusMeters": 805,
+ "blocksCity": 37588,
+ "blocksReporting": 24488,
+ "reports": 113481,
+ "reportsPlaced": 112956,
+ "population": 8804137,
+ "housingUnits": 3618633,
+ "greenAssets": 13959,
+ "greenProjects": 493,
+ "greenSinceIda": 5512,
+ "unservedBlocks": 5071,
+ "gapBlocks": 251,
+ "gapPopulation": 71712,
+ "gapHousingUnits": 27540,
+ "distribution": [
+  {
+   "years": 1,
+   "blocks": 8723,
+   "reports": 13241,
+   "shareOfReports": 11.7,
+   "noGreenNearby": 1937
+  },
+  {
+   "years": 2,
+   "blocks": 6888,
+   "reports": 23873,
+   "shareOfReports": 21.1,
+   "noGreenNearby": 1397
+  },
+  {
+   "years": 3,
+   "blocks": 4795,
+   "reports": 28908,
+   "shareOfReports": 25.6,
+   "noGreenNearby": 925
+  },
+  {
+   "years": 4,
+   "blocks": 2889,
+   "reports": 27918,
+   "shareOfReports": 24.7,
+   "noGreenNearby": 561
+  },
+  {
+   "years": 5,
+   "blocks": 1193,
+   "reports": 19016,
+   "shareOfReports": 16.8,
+   "noGreenNearby": 251
+  }
+ ],
+ "reportKinds": [
+  {
+   "id": "sewer",
+   "label": "Sewer backup",
+   "plural": "sewer backups",
+   "reports": 55791,
+   "share": 49.2
+  },
+  {
+   "id": "drains",
+   "label": "Clogged storm drain",
+   "plural": "clogged storm drains",
+   "reports": 35348,
+   "share": 31.1
+  },
+  {
+   "id": "street",
+   "label": "Water in the street",
+   "plural": "water in the street",
+   "reports": 17313,
+   "share": 15.3
+  },
+  {
+   "id": "basement",
+   "label": "Water in a basement",
+   "plural": "water in basements",
+   "reports": 5029,
+   "share": 4.4
+  }
+ ],
+ "boroughs": [
+  {
+   "name": "Queens",
+   "assetsPer1000": 2.91,
+   "reportsPlaced": 46063,
+   "assetsBuilt": 7001,
+   "population": 2405452
+  },
+  {
+   "name": "Brooklyn",
+   "assetsPer1000": 2.09,
+   "reportsPlaced": 35770,
+   "assetsBuilt": 5706,
+   "population": 2736074
+  },
+  {
+   "name": "Bronx",
+   "assetsPer1000": 0.68,
+   "reportsPlaced": 12326,
+   "assetsBuilt": 999,
+   "population": 1472650
+  },
+  {
+   "name": "Staten Island",
+   "assetsPer1000": 0.14,
+   "reportsPlaced": 12444,
+   "assetsBuilt": 69,
+   "population": 495747
+  },
+  {
+   "name": "Manhattan",
+   "assetsPer1000": 0.11,
+   "reportsPlaced": 6353,
+   "assetsBuilt": 184,
+   "population": 1694214
+  }
+ ]
+}

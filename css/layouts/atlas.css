@@ -1,0 +1,3574 @@
+/* ═══════════════════════════════════════════════════════
+   Layout: ATLAS — full-bleed map, side story feed, filter
+   chips, layers panel, FAB + floating CTA. The original
+   (and default) layout. Components come from ../core.css.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── LAYOUT ROOT: full-bleed map, no page scroll ─── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── MAP ─── */
+#map {
+  position: fixed;
+  inset: 0;
+  /* 19 August. `inset: 0` on iOS sizes to the LAYOUT viewport, which Safari
+     keeps at its URL-bar-collapsed height — so the container is permanently
+     taller than what you can see, its bottom strip lives behind the toolbar,
+     and because the container's size never changes as the toolbar moves,
+     Mapbox's own ResizeObserver never fires and the canvas never re-renders.
+     The map is then framed for a rectangle bigger than the screen: boroughs
+     cut off, and nothing responds to the browser resizing around it.
+
+     `dvh` is the dynamic viewport unit — it tracks the visible height as the
+     toolbar shows and hides, so the container changes size, Mapbox resizes
+     with it, and the fit is computed against what is actually on screen.
+     Over-constrained with inset's top/bottom, so height wins and bottom is
+     ignored, which is what we want. */
+  height: 100dvh;
+  z-index: 0;
+}
+
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-bottom-left {
+  z-index: 5 !important;
+}
+
+.mapboxgl-popup {
+  z-index: 10 !important;
+}
+
+/* ─── HEADER ─── */
+/* REB-477. The header is a STACK: brand row, waterline, credit strip. The
+   wrap is what is fixed and what ui.js measures into `--hdr-h`; `.hdr` is just
+   its first row. Anything that needs to sit under the header reads `--hdr-h`
+   and never a number. */
+.hdr-wrap {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+}
+
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* The phone menu hangs off this row, so it is the positioning context. */
+  position: relative;
+  /* All three insets, and the top one is not optional. With Safari's address
+     bar at the BOTTOM there is no browser chrome above the page at all, so
+     viewport-fit=cover runs the header under the status bar and the Dynamic
+     Island — which is exactly what 71f6aca did to Judy's phone. The horizontal
+     pair is the landscape case. --hdr-h is measured off this element, so
+     everything hanging below the header follows without being told. */
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
+  padding-bottom: 10px;
+  padding-left: calc(16px + env(safe-area-inset-left, 0px));
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  box-shadow: 0 2px 20px rgba(46, 180, 215, .25);
+}
+
+.hdr-brand {
+  display: flex;
+  /* REB-476 round three. A COLUMN, not a row, and this is the actual fix for
+     "the credit is beside the title, not below it".
+
+     Why it was beside it: since REB-459 the visible wordmark is the `#logoText`
+     anchor, not `#hdrName` — `#hdrName` renders to 0x0 and the live text sits
+     in the logo slot. So the brand row was [wordmark][div(name, sub)], and the
+     credit was a flex SIBLING of the wordmark rather than a block under it. No
+     amount of styling `.hdr-sub` could move it, because it was never in the
+     same column.
+
+     Worth recording how long that hid: `.hdr-sub` sits directly under
+     `.hdr-name` in the markup, so it reads as stacked, and a check comparing
+     the two rects agreed — against a `#hdrName` that is 0x0 and at 0,0. The
+     lesson is the boring one: look at the page. */
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  /* The brand gives way, the nav does not (REB-442). The header is a flex row
+     and every item defaulted to its intrinsic width, so adding Findings pushed
+     the padlock PAST the right edge — 780px on a 768px tablet, 400px on a 390px
+     phone. That is the REB-422 bug back again: a moderator who cannot reach the
+     lock types /admin.html from memory.
+
+     Measured before and after rather than assumed: the brand takes 194px of a
+     390px phone, which is the space the third nav item needed. */
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.hdr-brand > div { min-width: 0; }
+.hdr-brandcol { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+
+/* REB-477. The counts, under the wordmark. This replaces the pill that used to
+   float in the middle of the bar with nothing anchoring it — which was most of
+   why the row read as unresolved.
+
+   ONE raindrop, always, at Judy's call. An earlier study drew one drop per
+   story and capped the row; she was right that it is fluff. The drop is the
+   map's own mark and its job here is to say "these are stories", not to count
+   them. The number counts.
+
+   `aria-hidden` on the mark and `tabular-nums` on the figures, so the counts
+   line up as they grow and a screen reader hears the sentence rather than an
+   ornament. */
+.hdr-tally {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  /* Judy, 17 August: bumped from 11.5px, then again from 13.5px — the
+     story/report tally is the header's one hard number and read too quiet
+     next to the wordmark. */
+  font-size: 15px; line-height: 1.3;
+  /* REB-487: full white, Judy's ask. It was .92 alpha, which on this gradient
+     is a grey cast rather than a softening. */
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+/* The figures themselves get a further bump over the surrounding words — Judy
+   wanted the METRIC (11, 113,481) to stand out, not just the whole line. */
+.hdr-tally b { font-weight: 800; font-size: 1.12em; }
+.hdr-tally .t-div { opacity: .42; }
+.hdr-tally .t-drop { flex: none; display: block; }
+/* One number, two labels. The full sentence wraps the tally onto a second line
+   below ~700px and took the header to 135px at 600px wide; the short clause
+   keeps it to one. Swapped here rather than in JS so it follows a resize. */
+.hdr-tally .t-rep-short { display: none; }
+@media (max-width: 699px) {
+  .hdr-tally .t-rep-long { display: none; }
+  .hdr-tally .t-rep-short { display: inline; }
+}
+
+/* The waterline closes the sky. Below it is the street. */
+.hdr-waterline { height: 3px; background: linear-gradient(90deg, #1B6E86, var(--primary) 30%, var(--accent)); }
+
+/* The credit strip. Full width, which is the whole point: 151 characters of
+   partner credit fit on one line here and cannot fit in the brand column at
+   any size. Its own band, so wrapping costs the brand row nothing.
+
+   18 August: moved from the header stack to a fixed footer at the foot of
+   the page, at Judy's ask — same element, same colour, just relocated. `.side`
+   and `.fab` read `--ftr-h` (published by ui.js the same way as `--hdr-h`) so
+   neither sits under it. */
+.hdr-credit {
+  position: fixed;
+  left: 0; right: 0;
+  /* Not `bottom: 0` — that is the bottom of the LAYOUT viewport, which on iOS
+     sits behind the browser's own toolbar, so the strip was never visible on a
+     phone at all. */
+  bottom: var(--tool-gap, 0px);
+  z-index: 20;
+  /* 18 August: the header's own gradient, run in reverse — green to blue
+     where the header runs blue to green — so the footer echoes the header
+     without repeating it. Same tokens, same angle, stops swapped. */
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  color: #ffffff;   /* REB-487: was .84 alpha */
+  padding: 7px calc(16px + env(safe-area-inset-right, 0px)) calc(7px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px));
+  font-size: 13px;
+  line-height: 1.45;
+}
+.hdr-credit b { color: #fff; font-weight: 700; }
+.hdr-credit .c-sep { opacity: .38; padding: 0 7px; }
+.c-partner-link { color: inherit; text-decoration: none; }
+.c-partner-link:hover { text-decoration: underline; }
+/* The partner clause is 128 of the credit's 151 characters. At full width it
+   is one line; at 600px it was four, and the header hit 135px. Below 700px it
+   comes off and the strip keeps "Map created by Rebuild by Design".
+
+   That is a far better floor than this had before REB-477: the credit used to
+   live in the brand column, where the same clause had to be hidden below
+   1100px. Giving it its own band moved the cutoff from 1100 to 700. */
+@media (max-width: 699px) { .hdr-credit .c-partners { display: none; } }
+.hdr-credit[hidden] { display: none; }
+
+.hdr-name,
+.hdr-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* REB-476 round two. Judy: the credit needs a line break from the wordmark,
+   it is all on one line.
+
+   The rule above is why. `white-space: nowrap` was written for a two-word
+   subline and it made the six-partner credit a single unbreakable string that
+   ran under the title and ellipsised, so it read as part of the same line
+   rather than as its own block. It wraps now, and the ellipsis goes with the
+   nowrap — there is nothing left to truncate.
+
+   `.hdr-brand` still has `overflow: hidden` and `flex: 0 1 auto`, so this
+   grows the header's HEIGHT and never its width. REB-442's rule holds: the
+   brand gives way, the nav does not. The nav is untouched by this.
+
+   Smaller too, at Judy's ask: 11px against the title's --fs-title, with the
+   line-height pulled in so three wrapped lines do not read as three
+   paragraphs. */
+.hdr-sub {
+  white-space: normal;
+  text-overflow: clip;
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 62ch;
+}
+
+/* Never shrink the controls to make room for the wordmark. */
+.hdr-nav { flex: none; }
+
+.hdr-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, .25);
+  border: 1.5px solid rgba(255, 255, 255, .4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+  color: white;
+  letter-spacing: -.5px;
+  /* It is an <a> now (REB-422): kill the link underline and give it the same
+     quiet hover the rest of the header chrome uses. */
+  text-decoration: none;
+  transition: background .14s, border-color .14s;
+}
+.hdr-logo:hover { background: rgba(255, 255, 255, .38); border-color: rgba(255, 255, 255, .6); }
+/* A wordmark has no tile to light up, so it dims slightly instead. */
+.hdr-logo.has-img:hover { background: none; opacity: .82; }
+
+.hdr-name {
+  font-family: var(--font-display, var(--font, inherit));
+  font-size: .9rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* DUPLICATED: this selector is also defined at line 851. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.hdr-sub {
+  font-size: .75rem;
+  color: rgba(255, 255, 255, .75);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+/* Attribution as a quiet subline link (replaces the old competing pill). */
+.hdr-org-link { color: inherit; text-decoration: none; font-weight: 700; }
+.hdr-org-link:hover { text-decoration: underline; }
+
+/* Header nav: one rhythm of ghost items + a single primary (Share), with a
+   deliberately subtle admin lock at the end. */
+.hdr-nav { display: flex; align-items: center; gap: 4px; }
+/* DUPLICATED: this selector is also defined at line 802. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.hnav {
+  font-family: inherit; font-weight: 700; color: rgba(255, 255, 255, .9);
+  background: transparent; border: none; border-radius: 8px; padding: 7px 12px;
+  cursor: pointer; white-space: nowrap; transition: background .14s;
+}
+.hnav:hover { background: rgba(255, 255, 255, .15); color: #fff; }
+/* REB-471. Author rule beside the `hidden` attribute, following the note in
+   core.css: the UA's `[hidden] { display: none }` is the weakest rule in the
+   cascade and anything here that later sets a display on .hnav would silently
+   put Impact and Findings back in the header. Costs nothing, removes a way for
+   the review to go wrong without anyone noticing. */
+.hnav[hidden] { display: none; }
+/* Admin — Tier 4: a quiet lock, present for moderators, ignorable by visitors */
+.hnav-admin {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 7px; margin-left: 3px;
+  color: rgba(255, 255, 255, .5); border: 1px solid rgba(255, 255, 255, .22);
+  transition: color .14s, border-color .14s;
+}
+.hnav-admin:hover { color: #fff; border-color: rgba(255, 255, 255, .45); }
+.hnav-admin svg { width: 14px; height: 14px; }
+
+/* Clean-header variant (opt-in per tenant via theme.headerStyle = "clean"). */
+[data-header="clean"] .hdr {
+  background: var(--header-bg, var(--bg));
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+}
+[data-header="clean"] .hdr-logo { background: var(--primary); border-color: transparent; color: #fff; }
+[data-header="clean"] .hdr-name { color: var(--text); }
+[data-header="clean"] .hdr-sub { color: var(--muted); }
+[data-header="clean"] .hnav { color: var(--muted); }
+[data-header="clean"] .hnav:hover { background: var(--primary-l); color: var(--text); }
+[data-header="clean"] .hnav-admin { color: var(--muted); border-color: var(--border); }
+
+/* ─── BADGE — the living NYC total, now a header pill (opens Impact) ─── */
+/* REB-477. NOTHING RENDERS THIS ANY MORE. The stories pill was removed from
+   the header when the counts moved under the wordmark — it floated mid-bar
+   with nothing anchoring it, which was most of why the row read unresolved.
+   The rules are left rather than picked out of nine places across three
+   media blocks: REB-451 already broke this stylesheet once by bulk-removing
+   a class and leaving it a brace short. Delete them in one deliberate pass
+   with a brace count, not as a side effect of something else. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .3);
+  color: #fff;
+  padding: 5px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background .14s;
+}
+.badge:hover { background: rgba(255, 255, 255, .28); }
+.badge > svg { width: 15px; height: 15px; flex: none; opacity: .9; }
+.badge-n {
+  font-size: var(--fs-lead);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.badge-l { font-weight: 600; font-size: var(--fs-micro); color: rgba(255, 255, 255, .85); }
+/* clean-header tenants: dark text on the light surface */
+[data-header="clean"] .badge { background: var(--primary-l); border-color: transparent; color: var(--primary-d); }
+[data-header="clean"] .badge-l { color: var(--muted); }
+/* phones: keep just the number to save header room */
+@media (max-width: 767px) { .badge-l { display: none; } .badge { padding: 4px 10px; } }
+/* very narrow phones: drop the attribution subline so the header never crowds */
+@media (max-width: 479px) { .hdr-sub { display: none; } }
+
+/* ─── LAYER PANEL ─── */
+.layers {
+  position: fixed;
+  /* REB-476. Was a hardcoded 68px — the old header height plus a 10px gap, and
+     the same latent bug as `.side`: it went under the header the moment the
+     partner credit made the header taller. Both offsets read the measured
+     `--hdr-h` now. If a third thing ever hangs off the header, use this. */
+  top: calc(var(--hdr-h, 58px) + 10px);
+  right: 12px;
+  z-index: 15;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+  padding: 11px;
+  min-width: 180px;
+}
+
+/* DUPLICATED: this selector is also defined at line 916. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-title {
+  font-size: .76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+/* Collapsible panel header: title + chevron, clickable, always visible so the
+   panel is easy to hide and reopen on any screen. */
+.l-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
+.l-head .l-title { margin-bottom: 0; }
+.l-toggle {
+  display: flex; align-items: center; justify-content: center; flex: none;
+  position: relative;
+  width: 22px; height: 22px; border: none; border-radius: 6px;
+  background: none; color: var(--faint); cursor: pointer; transition: background .14s, color .14s;
+}
+.l-toggle:hover { background: var(--page); color: var(--ink); }
+/* REB-533. 22px is under the 24px floor and an iPad is a touch device. This
+   used to live inside the phone media query, so only phones got the room. */
+.l-toggle::after { content: ""; position: absolute; inset: -10px; }
+.l-toggle svg { width: 16px; height: 16px; transition: transform .2s; }
+/* expanded → chevron points up (click to hide); collapsed → down (click to show) */
+.layers:not(.collapsed) .l-toggle svg { transform: rotate(180deg); }
+.l-body { margin-top: 9px; }
+.layers.collapsed .l-body { display: none; }
+.layers.collapsed { padding-bottom: 9px; }
+
+/* Minimal cursor tooltip for the live data layers (311 counts, GI type) */
+.map-tip {
+  position: absolute; z-index: 16; pointer-events: none;
+  transform: translate(-50%, calc(-100% - 11px));
+  background: rgba(15, 38, 48, .92); color: #fff;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.45; letter-spacing: .01em;
+  padding: 4px 8px; border-radius: 6px;
+  /* pre-line, not nowrap: a multi-line hover (the persistence layer reads three
+     fields off one block) needs its newlines honoured. `width: max-content`
+     keeps the old behaviour for single-line tips, which would otherwise start
+     wrapping once shrink-to-fit ran out of room near the edge of the map. */
+  white-space: pre-line; width: max-content; max-width: 15rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .25);
+}
+
+/* DUPLICATED: this selector is also defined at line 919. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s;
+  margin-bottom: 2px;
+  border: 1.5px solid transparent;
+}
+
+.l-item:hover { background: var(--bg); }
+.l-item.on { background: var(--primary-l); border-color: rgba(46, 180, 215, .35); }
+
+.l-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Live overlay fetching: the swatch becomes a spinner, the row can't be re-toggled */
+.l-item.loading { pointer-events: none; opacity: .75; }
+.l-item.loading .l-dot {
+  background: transparent !important;
+  border-radius: 50%;
+  border: 2px solid var(--line-2);
+  border-top-color: var(--primary);
+  animation: lspin .7s linear infinite;
+}
+@keyframes lspin{ to { transform: rotate(360deg); } }
+
+/* DUPLICATED: this selector is also defined at lines 798, 919. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-label {
+  font-size: .72rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* DUPLICATED: this selector is also defined at lines 799, 920. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-badge {
+  font-size: .75rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--muted);
+  font-weight: 600;
+}
+/* once a live layer loads, the badge shows the report/asset total */
+.l-badge-num {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+}
+
+.l-item.on .l-label {
+  color: var(--primary-d);
+  font-weight: 600;
+}
+
+/* one-line "what am I looking at" caption under a layer's label */
+.l-item { flex-wrap: wrap; }
+
+/* Stepped-ramp legend for a choropleth layer. Every step is labelled in words:
+   the two palest reds fall below 3:1 on the basemap by design, so the label is
+   what actually carries the step, not the swatch. */
+
+/* Year scrubber for a timeline layer. Collapsed to nothing until the layer is
+   switched on, so the panel stays the same size it was. */
+
+/* the play triangle reads better solid; the pause bars stay stroked */
+
+/* Someone who has asked for less motion gets the scrubber, not the animation:
+   the play button still steps the years, it just does not tween between them. */
+@media (prefers-reduced-motion: reduce) {
+  .l-play { transition: none; }
+}
+
+.l-src {
+  font-size: .76rem;
+  color: var(--muted);
+  padding: 4px 2px;
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.leg-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, .6);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+}
+
+/* ─── SIDE PANEL ─── */
+/* The credit strip's own padding already clears the home indicator, so --ftr-h
+   covers it while the strip is visible. Below 479px the strip is hidden and
+   --ftr-h is 0, so the inset has to stand in for it. max(), not a sum, or the
+   two double-count above 479px. */
+:root { --ftr-safe: max(var(--ftr-h, 34px), env(safe-area-inset-bottom, 0px)); }
+
+/* How much of the page the BROWSER'S OWN toolbar is covering right now: the
+   layout viewport (100%, what `position: fixed` is measured against) minus the
+   dynamic one (100dvh, what you can see). Zero on desktop and whenever the
+   toolbar is retracted.
+
+   Deliberately not --vv-gap, which is the same measurement taken in JS but
+   also counts the keyboard: the bar has to ride the keyboard, the persistent
+   chrome must NOT leap up the screen while somebody is typing. Percentages
+   resolve against the initial containing block, so this is only valid on a
+   `position: fixed` element — every user of it below is one. */
+@media (max-width: 1023px) {
+  .hdr-credit, .side, .story-card { --tool-gap: max(0px, calc(100% - 100dvh)); }
+}
+
+.side {
+  position: fixed;
+  left: 0;
+  /* REB-476. Was a hardcoded 58px, which was the header's height on the day it
+     was written. Adding the partner credit made the header 90px and the pane
+     went under it — "Community Stories" was sliced in half. `--hdr-h` is
+     measured from the real element by ui.js and re-measured on resize, so the
+     two can never disagree again. The fallback is the old number. */
+  top: var(--hdr-h, 58px);
+  /* 18 August: the credit strip is now a fixed footer, not part of the header
+     stack — `--ftr-h` (published by ui.js the same way as `--hdr-h`) keeps the
+     pane's bottom edge above it instead of running under it. */
+  bottom: calc(var(--ftr-safe) + var(--tool-gap, 0px));
+  width: 340px;
+  z-index: 10;
+  background: white;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .35s cubic-bezier(.34, 1.2, .64, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, .07);
+}
+
+.side.open { transform: translateX(0); }
+
+.side-hdr {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* 18 August. Judy's sidebar redesign, top half taking Direction C's dense
+   treatment — a header that reads as a compact toolbar rather than a row of
+   assorted controls. The title still gets its own line (17 August); what
+   changed here is what sits below it: List/Photos/Search/Filter used to be
+   a segmented pair plus two bare icon buttons, three different visual
+   languages fighting for the same row. One bordered toolbar of labelled
+   cells replaces all three — see `.side-tool` below, which `.view-btn` and
+   `.filter-btn` both wear now instead of carrying their own separate looks. */
+.side-top {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.side-title-row { display: flex; align-items: center; gap: 8px; }
+.side-toolbar {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  /* Deliberately NOT overflow:hidden. The funnel/search popovers are
+     absolutely-positioned children of this row (so `top: 100%` lands exactly
+     under the toolbar rather than guessing an offset) — clipping the
+     container to round its corners clipped THEM too, off-screen and
+     invisible with every style otherwise correct. The four cells round
+     their own outer corners instead; see .side-tool:first-child/nth-child(4). */
+  position: relative;
+}
+
+.side-title {
+  font-family: var(--font-display, var(--font, inherit));
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  min-width: 0;
+  /* Was nowrap + ellipsis, which cut "Flood Stories from New Yorkers" at 320,
+     768 and 820 — it needs 238px and had 216. It has had its own line since
+     17 August, so a second line costs 20px and shows the whole name; an
+     ellipsis on the pane's own title costs the name itself. */
+  overflow-wrap: break-word;
+  line-height: 1.2;
+}
+
+.close-side {
+  width: 26px;
+  height: 26px;
+  /* Sharing a flex row with the title since REB-457, so it needs saying: a
+     26px square target was being squeezed to 23px by a long count string. */
+  flex: none;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: .8rem;
+  transition: all .15s;
+}
+
+.close-side:hover { background: var(--bg); color: var(--ink); }
+
+/* One toolbar cell — List, Photos, Search or Filter. Icon over a short
+   caption (set in JS: atlas.js for List/Photos, ui.js for Search/Filter),
+   equal width, a hairline divider between cells instead of four separate
+   buttons with their own borders. `.on`/`.open` (the two "this is active"
+   classes the four buttons already used before this pass) both read as the
+   same filled state, in the story blue — one active-state colour for the
+   whole toolbar, not one per control. */
+.side-tool {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 4px;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: inherit;
+  /* Was 9.5px. The 5 Aug pass set a 12.5px floor (--fs-micro) and these four
+     captions were the last thing under it — Judy, 19 August: legible. Each
+     cell is a quarter of the pane, which is 85px at the desktop 340 and more
+     on a phone, so the longest caption still sits on one line. */
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  cursor: pointer;
+  position: relative;
+  transition: background .15s, color .15s;
+}
+/* The 4th cell (Filter), not :last-child — the popovers are later DOM
+   siblings inside .side-toolbar too, not .side-tool, so :last-child never
+   matches a real button. Same reason first/last get their radius named by
+   position rather than :first-child/:last-child. */
+.side-tool:first-child { border-radius: 7px 0 0 7px; }
+.side-tool:nth-child(4) { border-right: none; border-radius: 0 7px 7px 0; }
+.side-tool:hover { background: var(--bg); color: var(--ink); }
+.side-tool.on, .side-tool.open { background: var(--story-blue); color: #fff; }
+.side-tool .fdot {
+  position: absolute; top: 6px; right: 8px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--filter-color); box-shadow: 0 0 0 2px var(--surface);
+}
+.side-tool.open .fdot { box-shadow: 0 0 0 2px var(--story-blue); }
+
+/* Category filter chips */
+.cat-row {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.cat-row::-webkit-scrollbar { display: none; }
+
+/* DUPLICATED: this selector is also defined at lines 673, 786, 868. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: .80rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.cat-chip:hover { border-color: var(--primary); color: var(--primary-d); }
+/* DUPLICATED: this selector is also defined at line 868. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip.on { background: var(--primary-l); border-color: var(--primary); color: var(--primary-d); }
+
+/* live per-category count inside a chip */
+.chip-n {
+  display: inline-block;
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .07);
+  font-size: .75rem;
+  text-align: center;
+}
+
+/* ─── GALLERY VIEW ─── */
+.gallery {
+  display: grid;
+  /* columns adapt to the panel width; tiles stay ~square via aspect-ratio */
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-auto-rows: min-content;
+  align-content: start;   /* pack rows to the top — don't stretch the tracks to
+                             fill the tall panel (that was the giant row gaps) */
+  gap: 9px;
+  padding: 11px 10px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─── FABS ─── */
+.fab {
+  position: fixed;
+  left: 12px;
+  /* 18 August: keep the FAB's prior 88px clearance and just add the credit
+     footer's height on top, so it holds its old visual position on mobile
+     (where the footer hides at 479px and this collapses back to 88px). */
+  bottom: calc(88px + var(--ftr-safe));
+  z-index: 15;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  /* Judy, 19 August: too small on desktop. This is the only way back into the
+     story list once the pane is closed, and at 12px/36px tall it read as a
+     status chip. Same call she made for the phone one on the 19th, at the same
+     numbers: 44px tall, which is also the tap-target floor. */
+  padding: 12px 18px;
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
+  /* Not `all`: the phone rule centres this with `translate`, and `all` would
+     animate the centring itself on every class change. */
+  transition: box-shadow .15s, transform .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fab svg { width: 18px; height: 18px; }
+
+/* HOVER ONLY WHERE HOVER IS REAL. On a touch screen `:hover` latches after a
+   tap and does not clear until you tap elsewhere, so this lift stayed stuck on
+   the button — half of what Judy saw. The other half is why the phone rule
+   below centres with `translate` and not `transform`: this rule REPLACED that
+   centring, so a tap threw the button half its own width to the left and the
+   .15s transition animated it going. */
+@media (hover: hover) {
+  .fab:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .15);
+  }
+}
+
+.fab-n {
+  background: var(--primary);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: .8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* .cta (the floating "Share Your Story" pill) removed 17 August — Judy: it
+   disconnected people from drop-pin/GPS/neighborhood on submit. Submitting
+   now always starts from a place: the map or the address bar. */
+
+/* ── The wordmark, as live text (REB-459) ─────────────────────────────────
+   Self-hosted, never hot-linked: the file was published from another RBD
+   Pages deploy, and a deploy that moves takes the header with it.
+
+   `font-display: swap` on purpose. The header must never be invisible while
+   20 KB loads, and this is a brand face on one short string — a flash of the
+   UI font is a far smaller cost than a blank header on a slow connection.
+
+   Weight 700 and only 700. The file is usWeightClass 700 with no other cut and
+   no variable axis, so declaring the real weight here means the browser uses
+   the outlines as drawn. Ask for 800 or 900 anywhere and you get a synthesised
+   bold, which on an already-outlined face smears the counters of the outline
+   shut. If a heavier wordmark is ever wanted, reach for letter-spacing, size,
+   or `-webkit-text-stroke` — not font-weight. */
+@font-face {
+  font-family: 'RBD Outlined';
+  src: url('../../assets/fonts/RBDBoldOutlined.woff2') format('woff2'),
+       url('../../assets/fonts/RBDBoldOutlined.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The text wordmark. Sized with clamp() rather than a media-query ladder,
+   because unlike the PNG this is text and cannot be scaled by object-fit —
+   "Rainproof NYC Flood Map" is three times the width of the old "RAINPROOF
+   NYC" lockup and has to give way continuously as the nav claims the row. */
+.hdr-logo.has-wordmark {
+  background: none; border: none; border-radius: 0;
+  width: auto; height: auto; min-width: 0;
+  /* REB-476: flex-start, not center. `.hdr-brand` is a COLUMN now so the
+     wordmark could stack above the credit, and in a column `align-self: center`
+     centres horizontally — it sat the wordmark 47px in from the credit under
+     it. It read as indented for no reason. */
+  align-self: flex-start;
+  /* REB-478. Judy: larger and bolder. Up from clamp(14, 2.1vw, 22) — the
+     wordmark now has the header's first row to itself, because the counts
+     moved to their own line in REB-477 and the pill went away entirely, so
+     there is room the old clamp was written without.
+     Judy, 17 August: bumped again, clamp(17,2.8vw,30) → clamp(19,3.1vw,33). */
+  font-size: clamp(19px, 3.1vw, 33px);
+  line-height: 1.05;
+  letter-spacing: .01em;
+  /* Explicitly #ffffff, at Judy's ask. It inherited white from `.hdr-logo`
+     before, which was the same colour but not a stated one — and the
+     `[data-header="clean"]` variant overrides this to dark ink, so being
+     explicit here says which of the two is the deliberate value. */
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* An outlined face is mostly holes. On the header's teal gradient the hairline
+     needs every bit of edge contrast it can get, so no anti-alias thinning. */
+  -webkit-font-smoothing: antialiased;
+  /* The stroke COLOUR lives here; its width comes from `branding.wordmarkStroke`
+     and is set on the element, so the knob Judy turns is one number in config.
+     `currentColor` matters: hardcoding white would leave a white outline behind
+     on the `[data-header="clean"]` variant, where the wordmark is dark ink. */
+  -webkit-text-stroke-color: currentColor;
+}
+.hdr-logo.has-wordmark:hover { background: none; opacity: .82; }
+/* The `clean` header variant paints a light bar, and the tile rule above it
+   gives `.hdr-logo` white text — correct for a coloured tile, invisible for a
+   wordmark that has no tile. Nothing in this tenant sets `data-header` today;
+   this is here so the variant does not quietly break the first time it is. */
+[data-header="clean"] .hdr-logo.has-wordmark { background: none; color: var(--text); }
+/* The wordmark IS the name, so the text name beside it would say it twice —
+   same reason the image case hides it. */
+.hdr-logo.has-wordmark + div .hdr-name { display: none; }
+
+/* The brand takes its own row on a phone (REB-459).
+
+   REB-442 set the rule that the brand gives way and the nav never does, which
+   was right for an <img>: `object-fit` scaled it down and it stayed a whole
+   word, just small. Text has no such mechanism. At 390px the nav claims 318 of
+   384px, the brand is squeezed to 66, and "Rainproof NYC Flood Map" is clipped
+   to "RAINPF" with the nav sitting on top of it — which is precisely the
+   "reads as a rendering bug rather than as a truncation" failure the img rule
+   below was written to prevent.
+
+   So on narrow screens the row wraps instead of one item eating the other.
+   Both are then whole and legible, at the cost of a second header line on a
+   phone. The alternative was a wordmark at about 4px, or hiding a nav item;
+   neither is a trade worth taking to save 30px of chrome.
+
+   NOT SEEN ON A REAL PHONE. Two sessions have failed to resize the automation
+   window; this was measured in a 390px iframe, which gets the media query and
+   the layout right but is not a device. */
+@media (max-width: 600px) {
+  .hdr { flex-wrap: wrap; row-gap: 4px; }
+  .hdr-brand { flex: 1 1 100%; overflow: visible; }
+  .hdr-nav { flex: 1 1 auto; justify-content: flex-start; }
+}
+
+/* Header logo image (branding.logoUrl): drop the tile chrome, let the mark
+   sit on its own. Falls back to the text monogram when no logoUrl is set.
+   The Rainproof wordmark is a wide horizontal lockup (~9.7:1), so it gets a
+   generous max-width; it shrinks on phones (below). */
+.hdr-logo.has-img {
+  background: none; border: none; border-radius: 0;
+  width: auto; height: 26px; min-width: 0; overflow: visible; align-self: center;
+}
+.hdr-logo.has-img img { height: 100%; width: auto; max-width: 232px; object-fit: contain; display: block; }
+/* The logo is itself the "Rainproof NYC" wordmark, so hide the duplicate text
+   name beside it; keep the "by Rebuild by Design" subline for attribution. */
+.hdr-logo.has-img + div .hdr-name { display: none; }
+@media (max-width: 767px){
+  .hdr-logo.has-img { height: 22px; }
+  .hdr-logo.has-img img { max-width: 168px; }
+}
+
+/* The wordmark SHRINKS rather than being clipped (REB-442). Letting the brand
+   give way to the nav fixed the padlock running off the edge, but the brand is
+   an <img>, so `text-overflow: ellipsis` does nothing to it — it simply got cut
+   mid-word and "RAINPROOF NY" read as a rendering bug rather than as a
+   truncation. Constrain the width and let object-fit scale it. */
+@media (max-width: 600px){
+  .hdr-logo.has-img { height: 20px; max-width: 132px; }
+  .hdr-logo.has-img img { max-width: 100%; }
+}
+
+@media (max-width: 400px){
+  .hdr-logo.has-img { height: 18px; max-width: 108px; }
+}
+
+/* Multi-photo count chip on a card (camera icon + N) */
+.scard-hero-count { display: inline-flex; align-items: center; gap: 4px; }
+.scard-hero-count svg { width: 12px; height: 12px; }
+
+/* ─── RESPONSIVE ─── */
+@media (min-width: 768px) {
+  /* Keeps the welcome coach-mark centred on the visible map: shift right by
+     half the side panel's width when it is open, back to viewport centre when
+     closed. Used to also carry the floating .cta, removed 17 August. */
+  #side.open ~ .welcome-hint { left: calc(50% + 170px); }
+  .fab { display: none; }
+}
+@media (max-width: 767px){
+  .hnav { padding: 7px 9px; }
+}
+
+/* Three nav items plus the padlock (REB-442). REB-431 declined to add a third
+   because "four items plus the lock does not fit a phone header"; Judy chose
+   the third item anyway, so this is where it has to be made to fit.
+
+   Labels shrink first. Nothing is dropped and the padlock stays reachable at
+   every width, which is the exact bug REB-422 fixed and this must not undo. */
+@media (max-width: 600px){
+  .hdr-nav { gap: 1px; }
+  .hnav { padding: 7px 7px; font-size: var(--fs-micro); }
+}
+
+/* Below this the stories pill is the first thing to go, not a nav item: it is
+   a second door to Impact, which the nav already carries, so it is the only
+   genuinely redundant thing in the header. */
+@media (max-width: 480px){
+  .badge { display: none; }
+  .hnav { padding: 6px 5px; }
+}
+
+@media (max-width: 767px){
+  /* the header chevron handles collapse on all screens now (see .l-head) */
+  .layers { right: 8px; min-width: 150px; }   /* top comes from --hdr-h, see line ~345 */
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPERATING MODES (?mode=kiosk)
+   Same engine, same questions — different chrome. `?mode=share` (the
+   conversational intake) was removed 18 August, at Judy's ask.
+   ═══════════════════════════════════════════════════════ */
+
+/* The focused mode strips the explore chrome down to the task. */
+body[data-mode="kiosk"] .side,
+body[data-mode="kiosk"] .fab,
+body[data-mode="kiosk"] .map-bar,
+body[data-mode="kiosk"] .story-card,
+body[data-mode="kiosk"] .badge,
+body[data-mode="kiosk"] .layers,
+body[data-mode="kiosk"] .hdr-nav {
+  display: none !important;
+}
+
+/* type chips wrap (all visible) and carry a colour dot */
+.cat-row { flex-wrap: wrap; overflow-x: visible; }
+/* DUPLICATED: this selector is also defined at lines 477, 786, 868. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip { display: inline-flex; align-items: center; gap: 5px; }
+.chip-dot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0; box-shadow: 0 0 0 1.5px rgba(255,255,255,.6);
+}
+.chip-all { background: conic-gradient(#FD2A37, #3D50FF, #12CB76, #FB942A, #FD2A37); }
+
+.side-filters { display: flex; gap: 6px; margin-top: 8px; }
+/* DUPLICATED: this selector is also defined at lines 789, 863. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.side-filters select {
+  flex: 1; min-width: 0; padding: 7px 24px 7px 9px; border-radius: 8px;
+  border: 1.5px solid var(--border); background-color: var(--bg);
+  font-size: .82rem; font-weight: 600; color: var(--text); cursor: pointer; outline: none;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234A5568' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.side-filters select:focus { border-color: var(--primary); }
+
+/* Click-to-add confirm bubble (mapbox popup content) */
+.add-here { text-align: center; }
+
+.add-here .ah-row { display: flex; gap: 6px; }
+.add-here button {
+  flex: 1; padding: 6px 12px; border-radius: 7px; font-size: .82rem; font-weight: 700;
+  cursor: pointer; border: 1.5px solid var(--border); font-family: inherit;
+}
+.add-here .ah-no { background: #fff; color: var(--muted); }
+.add-here .ah-no:hover { border-color: var(--muted); }
+/* DUPLICATED: this selector is also defined at line 723. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.add-here .ah-yes { background: var(--primary); border-color: var(--primary); color: #fff; }
+.add-here .ah-yes:hover { background: var(--primary-d); }
+.add-here-pop .mapboxgl-popup-content { padding: 11px 13px; border-radius: 13px; box-shadow: 0 8px 26px rgba(0,0,0,.2); }
+
+/* raindrop marks (map + legend + chips + cards) */
+.dropmark { display: inline-block; vertical-align: -2px; flex: none; }
+.cat-chip .dropmark { margin: 0; }
+.leg .dropmark { margin-right: 6px; }
+.scard-top .dropmark { flex: none; }
+
+/* minimal confirm bubble: X to close + a single Add story button */
+.add-here { position: relative; text-align: center; padding-top: 2px; }
+.add-here .ah-x { position: absolute; top: -3px; right: -1px; width: 20px; height: 20px; padding: 0; border: none; background: none; color: var(--muted); font-size: .78rem; line-height: 1; cursor: pointer; }
+.add-here .ah-x:hover { color: var(--text); }
+.add-here .ah-t {
+  /* merged from 2 rules, 6 properties */
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  margin: 2px 16px 9px;
+}
+/* DUPLICATED: this selector is also defined at line 703. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.add-here .ah-yes { display: block; width: 100%; flex: none; }
+
+/* One shell, four modals (REB-430). Impact, About and the two REB-431 panels
+   all wear this, so the width is changed here and nowhere else. 560px was set
+   for a panel of four KPIs; these now carry running prose, distribution bars
+   and source rows, and 560 made a 60-character measure out of a 900px screen.
+   720 keeps the measure comfortable without turning a paragraph into a banner,
+   and the phone rule below still takes the whole width. */
+.impact-sheet { max-width: 720px; }
+@media (max-width: 767px) {
+  .impact-sheet { max-width: none; }
+}
+
+/* The form is a centred modal over a dimmed backdrop, not a panel beside the
+   map, so its width costs the map nothing (REB-439). 620px was narrow for a
+   step that now carries the tenure chips, the storm and date pair, an eight-row
+   story box and ten tags. Matched to the modal shell above rather than picking a
+   third number, which keeps the story box near a 78-character measure instead of
+   pushing it past 90. The phone rule takes the whole width, as everywhere else. */
+.form-sheet { max-width: 720px; }
+@media (max-width: 767px) {
+  .form-sheet { max-width: none; }
+}
+
+/* The wider sheet helps the chips and the storm/date pair, but it pushed the
+   story box to a 94-character line, and this box now holds up to 5,000
+   characters of continuous prose that someone will re-read before they submit.
+   Cap the measure in `ch` so it follows the font size instead of a magic pixel
+   width, and let it stay full width on a phone where there is no room to spare. */
+.form-sheet textarea.field { max-width: 72ch; }
+@media (max-width: 767px) {
+  .form-sheet textarea.field { max-width: none; }
+
+  /* Ten tags wrapped to five rows at 390px, which is the wall REB-439 set out
+     to remove, and the phone is where most residents arrive because the QR code
+     sends them there. Tighter padding and a smaller step take it to four without
+     going under the 12.5px floor the 5 August pass set: .78rem is 13.26px at the
+     17px root. Desktop keeps the roomier chip. */
+  .fcat { padding: 5px 9px; font-size: .78rem; }
+  .cat-grid { gap: 5px; }
+}
+/* `overscroll-behavior: contain` — REB-522, and it is not cosmetic. `html,
+   body` are locked (8b89951: height 100%, overflow hidden), so a scroll gesture
+   carried past the end of this panel chains to a document that cannot move and
+   the panel simply stops. Every sheet that scrolls its own body needs this. */
+.imp-body { padding: 4px 22px 8px; overflow-y: auto; overscroll-behavior: contain; }
+.imp-eyebrow { font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--primary-d); }
+
+.imp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+.imp-kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; }
+
+/* DUPLICATED: this selector is also defined at lines 800, 957. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.imp-l { font-size: .75rem; color: var(--muted); margin-top: 5px; line-height: 1.3; }
+/* Context under a KPI (the all-time total beneath the since-Ida one). Stays on
+   the same micro step as the label and separates by colour, so the scale keeps
+   its six sizes. */
+.imp-sub { display: block; color: var(--faint); margin-top: 3px; }
+
+/* Seed-content marking. Deliberately quiet but unmissable: it must not look
+   like a story type or a category chip (those are the taxonomy), and it must
+   survive a screenshot, because that is how this map gets forwarded. */
+.ex-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 6px 2px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--bg); color: var(--muted);
+  font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  vertical-align: 2px; white-space: nowrap;
+  /* The card byline sits in a column flex (.scard-idwrap), where a bare
+     inline-block would stretch to the full card width and shove the
+     neighbourhood line down. Pin it to its own content and to the start edge. */
+  align-self: start; width: max-content; margin-left: 0;
+}
+.scard-name + .ex-badge, .gal-name + .ex-badge, .sp-name .ex-badge { margin-left: 6px; }
+.scard-idwrap > .ex-badge, .gal-item > .ex-badge { margin-left: 0; margin-top: 2px; }
+/* The story header went from a light per-type tint to one deep blue (REB-463),
+   which broke this badge: a 45%-white pill with inherited white text blends to
+   #7AAEBC and lands at 2.44:1. Solid white with the header's own blue reads at
+   6.07:1 and looks deliberate rather than washed. */
+.sp-name .ex-badge { border-color: transparent; background: #fff; color: var(--story-blue-deep); opacity: 1; }
+.sp-exnote { margin: 6px 0 0; font-size: var(--fs-micro, 12.5px); line-height: 1.45; color: inherit; opacity: .82; }
+.imp-exnote {
+  margin: 0 0 18px; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: var(--fs-micro, 12.5px); line-height: 1.5; color: var(--muted);
+}
+
+.imp-bar { display: grid; grid-template-columns: 150px 1fr 24px; align-items: center; gap: 10px; margin-bottom: 8px; }
+
+.imp-bar-track { height: 18px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+/* The fill colour was set inline per bar from the story type's hue. With one
+   colour for every story (REB-463) it belongs here. The city-record
+   distribution bars set their own `background` inline and still win. */
+.imp-bar-fill { height: 100%; border-radius: 6px; min-width: 3px; transition: width .3s;
+  background: var(--story-blue); }
+
+.imp-sowhat { background: var(--primary-l); border-radius: 14px; padding: 14px 16px; margin: 22px 0 16px; }
+
+/* DUPLICATED: this selector is also defined at line 996. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.imp-cta { display: block; width: 100%; padding: 13px; border: none; border-radius: 12px; background: var(--primary); color: #fff; font: inherit; font-weight: 700; font-size: .85rem; cursor: pointer; }
+.imp-cta:hover { background: var(--primary-d); }
+@media (max-width: 560px){ .imp-kpis { grid-template-columns: repeat(2, 1fr); } .imp-bar { grid-template-columns: 108px 1fr 22px; } }
+
+/* The city's own record, citywide — two wide live totals (not the 4-up story
+   KPIs) plus the sentence that ties the stories to the gap in what's built. */
+.imp-kpis-2 { grid-template-columns: repeat(2, 1fr); margin-bottom: 12px; }
+.imp-city-note { font-size: .8rem; color: var(--muted); line-height: 1.6; margin: 0 0 22px; }
+.imp-city-note b { color: var(--accent2); font-weight: 800; }
+
+/* ═══ Readability: larger type for an interactive map ═══ */
+/* DUPLICATED: this selector is also defined at lines 477, 673, 868. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip { font-size: .74rem; }
+/* DUPLICATED: this selector is also defined at lines 680, 863. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.side-filters select { font-size: .78rem; }
+.scard-who { font-size: .82rem; }
+.scard-txt { font-size: .86rem; line-height: 1.52; }
+.scard-cat, .scard-type { font-size: .82rem; }
+.scard-date { font-size: .81rem; }
+.leg-lbl {
+  /* merged from 2 rules, 2 properties */
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+/* DUPLICATED: this selector is also defined at lines 315, 919. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-label { font-size: .8rem; }
+
+/* DUPLICATED: this selector is also defined at lines 319, 920. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-badge { font-size: .78rem; }
+
+/* DUPLICATED: this selector is also defined at lines 737, 957. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.imp-l { font-size: .79rem; }
+
+/* DUPLICATED: this selector is also defined at line 166. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.hnav { font-size: var(--fs-label); }
+
+/* ══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v2 — tokens-first. One type scale, refined ink,
+   rebuilt cards, compact legend, wider sidebar, responsive.
+   (Appended last so it supersedes the ad-hoc sizes above.)
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --fs-display:26px; --fs-title:18px; --fs-lead:15px; --fs-body:14.5px; --fs-label:13.5px; --fs-micro:12.5px;
+  --ink:var(--text); --faint:#7C929B; --surface:#fff; --page:var(--bg);
+  --accent2:#0F7FA0; --accent-l:#E4F5FA; --line-2:#C6DBE3;
+  /* Hairline used by cards, pills and filter buttons. It was referenced 11x
+     across this file but never defined, so every `solid var(--line)` border
+     collapsed to none — track the theme border token. */
+  --line:var(--border);
+
+  /* ── The story palette (REB-468) ──────────────────────────────────────
+     ONE colour represents a story on every surface, and the TYPE is carried by
+     a glyph. `applyTheme` overwrites all of these from `storySchema`, so these
+     are fallbacks for a tenant that sets none — declared here so the stylesheet
+     reads on its own and nothing renders colourless before config lands.
+
+     #154f9f was picked by measurement against the new basemap: at the old
+     #2db4d9 a pin sat ΔE 2.1 from the 2100 flood layer over water, which is
+     invisible, and its white glyph was 2.43:1. At #154f9f the worst separation
+     anywhere on the map is ΔE 14.1 and the glyph is 7.92:1.
+
+     Which to reach for:
+       --story-blue        the raindrop, and any surface carrying white ....... 7.92:1
+       --story-tile-active hover and selected. WHITE on it is 2.43:1, which is
+                           Judy's explicit decision, taken repeatedly with the
+                           number in front of her. Do not quietly change it.
+       --filter-color      the filter buttons. NOT a story colour. It shared the
+                           tile token until REB-468, so a change to the tiles
+                           silently repainted the filter row. */
+  --story-blue:#154f9f;
+  --story-blue-deep:#154f9f;
+  --story-blue-text:#154f9f;
+  --story-tile:#154f9f;
+  --story-tile-active:#2db4d9;
+  --filter-color:#3eb094;
+}
+html { font-size:16px; }
+body { font-size:var(--fs-body); color:var(--ink); }
+
+/* Responsive type: the scale flexes by device. Body / label / micro hold
+   steady so dense UI text never shrinks on a phone; the display, title and
+   lead rungs breathe up on desktop and ease down on iPhone — and because
+   every component reads a token, the whole app follows from these lines. */
+@media (min-width: 1024px) {           /* desktop */
+  :root { --fs-display: 29px; --fs-lead: 15.5px; }
+}
+@media (max-width: 767px){            /* iPhone */
+  :root { --fs-display: 22px; --fs-title: 17px; }
+}
+/* iOS zooms any focused control under 16px — pin every text input at 16 on
+   phones no matter which rung it maps to. */
+@media (max-width: 767px) {
+  .field, .cx-input, .side-search input, textarea, select,
+  input[type="email"], input[type="tel"], input[type="search"] { font-size: 16px; }
+}
+
+/* ── header: one size for the utility items ── */
+.hdr-name { font-size:var(--fs-title); font-weight:700; letter-spacing:-.01em; }
+/* DUPLICATED: this selector is also defined at line 150. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+/* REB-476: 11px, Judy's ask. Set HERE as well as in the block above, because
+   this is the later of the two .hdr-sub definitions and wins per-property. */
+.hdr-sub { font-size:11px; font-weight:600; letter-spacing:.01em; text-transform:none; }
+/* REB-476. The partnership clause is the same size and colour but a lighter
+   weight, which is what lets six organisations sit on the credit line without
+   a second row. Judy's ask, and worth keeping as a rule: the credit is one
+   sentence with two levels of emphasis, not two sentences. */
+.hdr-partners { font-weight:400; }
+/* REB-476 round two. Measured, not assumed: letting the credit wrap blew the
+   header to 272px at 768px wide and 99px at 600px, because the brand column
+   narrows faster than the sentence does and six organisations then take five
+   or six lines. Desktop was fine at 65px.
+
+   So the partnership clause comes off below 1100px and the credit falls back to
+   "Map Created By: Rebuild by Design", which is what the subline said
+   yesterday. Below 480px `.hdr-sub` was already hidden entirely — that rule
+   predates this and is what keeps the phone header to two rows.
+
+   Hiding the clause rather than clamping it: -webkit-line-clamp would cut the
+   list mid-name, and a partner truncated to "Nonprofit Staten Isl…" is worse
+   than a partner not listed in a header at all. If the partners have to appear
+   at every width, that is a header LAYOUT change — a second row under the nav
+   rather than a subline inside the brand column — and it is not this fix. */
+/* REB-477 retires the 1099px kill-switch this rule used to be. The clause was
+   hidden because the credit lived in the BRAND COLUMN, which narrows faster
+   than the sentence does — it blew the header to 272px at 768px. In its own
+   full-width band the credit wraps to at most two lines and costs the brand
+   row nothing, so every partner is named at every width above 480px.
+   Below 480px the whole strip comes off; see the rule further down. */
+@media (max-width: 479px) { .hdr-credit { display: none; } }
+
+/* ── sidebar ── */
+:root { --side-w: 380px; }
+.side { width: var(--side-w); }
+/* The story count, on the title line (REB-457, recoloured 18 August to a
+   small chip rather than plain muted text — Direction C's treatment).
+   `margin-right: auto` is what holds the close button against the right
+   edge; `flex: none` keeps the number from being squeezed to an ellipsis
+   when the title is long. .side-title's own min-width:0/ellipsis (defined
+   where the rest of its rule lives, above the toolbar CSS) is what actually
+   yields first when the row is tight — the count and the close button are
+   both fixed-width. */
+.side-count {
+  font-size: 12px;
+  color: var(--story-blue);
+  background: var(--bg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 8px;
+  border-radius: 999px;
+  flex: none;
+  margin-right: auto;
+}
+/* DUPLICATED: this selector is also defined at lines 680, 789. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.side-filters select { font-size:var(--fs-label); padding:8px 26px 8px 11px; border-radius:9px; }
+/* DUPLICATED: this selector is also defined at lines 477, 673, 786. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip { font-size:var(--fs-label); font-weight:600; padding:5px 11px; }
+/* DUPLICATED: this selector is also defined at line 494. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.cat-chip.on { background:var(--accent-l); border-color:var(--accent2); color:var(--accent2); }
+.cat-chip.on .chip-n {
+  /* merged from 2 rules, 2 properties */
+  background: var(--accent2);
+  color: #fff;
+}
+.chip-n { font-size:var(--fs-micro); }
+.badge {
+  /* merged from 2 rules, 2 properties */
+  font-size: var(--fs-label);
+  font-weight: 700;
+}
+.feed {
+  /* merged from 2 rules, 4 properties */
+  flex: 1;
+  overflow-y: auto;
+  padding: 11px 10px 20px;
+  background: var(--page);
+}
+
+/* ── story card, rebuilt 18 August, revised same day ──
+   Judy's sign-off picked Direction B of a three-way mockup round (hero
+   photo/video, avatar floating over it) — with two corrections the moment
+   she saw it live: the floating avatar had traded the raindrop for a plain
+   circle, which she rejected outright ("NO CIRCLE"), and the tag pills read
+   as decoration rather than filters. Both fixed here; see .scard-drop and
+   .scard-tag below.
+
+   Consolidated here rather than left as another override layer: this whole
+   block used to be duplicated at three points further down the file
+   (`.scard-hood` alone had three copies). Redesigning it was the moment to
+   fold those back into one definition instead of adding a fourth. */
+.scard { display:flex; flex-direction:column; background:var(--surface);
+  border-radius:20px; box-shadow:0 2px 10px rgba(15,38,48,.07);
+  overflow:hidden; margin-bottom:10px; cursor:pointer;
+  transition:box-shadow .2s, transform .2s; }
+.scard:hover { box-shadow:0 14px 28px -10px rgba(15,38,48,.22); transform:translateY(-2px); }
+
+/* Tightened 18 August, Judy: the card runs long vertically, maximise how
+   many fit per scroll. 14/16 → 12/14, and every internal gap below (head,
+   tags, foot) came down with it — same ratios, smaller numbers, so the card
+   still reads as one design, not a padding cut nobody coordinated. */
+.scard-main { padding:12px 14px; }
+/* Clears the drop floating down from the hero — see .scard-drop.float. */
+.scard.has-hero .scard-main { padding-top:24px; }
+
+/* `overflow` stays visible here (not hidden) so the floating drop can hang
+   off the hero's bottom edge without being clipped by it; the top corners
+   are rounded on the img/video itself instead. `object-position:center`
+   (18 August, Judy) makes sure a cropped hero centres on the photo's actual
+   subject rather than whatever `cover` happens to keep at the default.
+
+   `overflow:visible` has to be explicit here — core.css has its own, older
+   `.scard-hero` (the engine default other layouts still use) that sets
+   `overflow:hidden`, same selector, equal specificity, and atlas.css never
+   overrode that one property. The floating drop was being sliced flat
+   across its point, the exact height core.css's hidden rectangle cut off —
+   a circle clipped the same way just doesn't read as broken the way a
+   raindrop's tip does, which is why this went unnoticed through the first
+   rebuild. */
+.scard-hero { height:150px; position:relative; overflow:visible; }
+.scard-hero img, .scard-hero video { width:100%; height:100%; object-fit:cover; object-position:center;
+  display:block; border-radius:20px 20px 0 0; pointer-events:none; }
+/* The positioned group; each .scard-hero-count inside it is a plain static
+   pill in a flex row. These were briefly the same class during the mockup
+   round, which put every pill at position:absolute and stacked them on top
+   of each other instead of side by side — kept as two classes so a story
+   with several media kinds (say four photos AND a video) shows both counts,
+   not just the last one painted. */
+.scard-hero-badges { position:absolute; bottom:8px; right:8px; display:flex; align-items:center; gap:4px; }
+.scard-hero-count { display:flex; align-items:center; gap:3px; background:rgba(15,38,48,.72); color:#fff;
+  font-size:var(--fs-micro); font-weight:700; padding:2px 8px; border-radius:6px; }
+.scard-hero-count svg { width:11px; height:11px; }
+
+/* The raindrop itself, not a chip behind it (18 August; see the note in
+   render.js). `dropMark`'s own SVG paints the drop, its outline and its
+   glyph — this class only positions the mark and, when floating, keeps it
+   legible over a photo of unknown brightness with a drop-shadow rather than
+   a solid ring. `.float` is the has-hero case; without it the mark sits
+   inline in .scard-head next to the name, same as before. */
+.scard-drop { flex:none; display:flex; align-items:center; justify-content:center; }
+.scard-drop.float { position:absolute; left:16px; bottom:-18px;
+  filter:drop-shadow(0 3px 6px rgba(15,38,48,.45)); }
+
+.scard-head { display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+/* The story type, in words (REB-464). The card carried only a mark before, and
+   a mark cannot name a type to anyone who has not already learnt it. Bold and
+   in the drop's blue, so the two read as one statement — kept blue through
+   the 18 August merge on Judy's explicit call, rather than the green the
+   mockup's Direction B used for this label. */
+.scard-type { display:block; font-size:var(--fs-micro); font-weight:800; color:var(--story-blue-text);
+  letter-spacing:.01em; line-height:1.3; }
+.scard-name { font-size:var(--fs-label); font-weight:700; color:var(--ink); letter-spacing:-.01em; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* A rung down from --fs-label (17 August, was up a rung from micro at
+   REB-422) and set a touch tighter, now that excerpt() keeps this short on
+   its own — the line-clamp below is a safety cap, not the thing doing the
+   shortening any more. */
+.scard-body { font-size:var(--fs-micro); color:var(--ink); line-height:1.5; letter-spacing:-.005em; margin:0;
+  display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.scard.has-hero .scard-body { -webkit-line-clamp:3; }
+
+/* Hashtags, not a dot + label pill (18 August, Judy: "the dot ascii thats
+   there now could be a # with entirely"). A real filter now, not decoration
+   — see the data-filtercat wiring in js/ui.js — so these are buttons with a
+   pointer cursor and a hover/focus state, styled to read as a link rather
+   than a chip. Button reset (border/background/font/padding) because the
+   element is a <button> for click + keyboard access, not a <span>. */
+.scard-tags { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:8px; }
+/* #54ac55, Judy's literal ask. Measured, not applied blind: 2.83:1 on white
+   at this size/weight, under the 4.5 normal text needs (bold at 12.5px
+   doesn't reach the "large text" 3:1 exemption) — the same number already on
+   record for this exact hex against the section headings in STATUS.md, where
+   she kept it knowingly. Flagging it here once for the same reason, not
+   substituting a different green on her behalf. */
+.scard-tag { border:none; background:none; padding:0; font:inherit; cursor:pointer;
+  font-size:var(--fs-micro); font-weight:700; color:#54ac55; }
+.scard-tag:hover, .scard-tag:focus-visible { text-decoration:underline; }
+
+.scard-foot { display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px;
+  margin-top:9px; padding-top:9px; border-top:1px solid var(--line); }
+.scard-mtag { display:inline-flex; align-items:center; gap:4px; font-size:var(--fs-micro); font-weight:600; color:var(--muted); }
+.scard-mtag svg { width:13px; height:13px; }
+/* Submitted date only (18 August — carried "Happened" too for a few hours;
+   Judy asked for it back off the card to cut vertical height, it's still on
+   the open story's own tags row via .sp-event). "Reported" is "Submitted"
+   to match the stepped form's own language, which never says "report". */
+.scard-when { margin-right:auto; flex:none;
+  font-size:var(--fs-micro); color:var(--faint); font-variant-numeric:tabular-nums; }
+
+/* ── legend / layers, lighter ── */
+/* REB-480. 248px -> 292px. Judy: with the layers toggled on the text still is
+   not legible, the count is covering the title.
+
+   She is right and it is arithmetic. The longest label, "Clogged Storm Drains
+   (311)", needs 157px. At 248px the row gave it 123: 220 of content, less an
+   11px swatch, 14px of gaps and the 51px the count reserves. It fits at 292.
+
+   The count's column could not be taken instead — REB-448 reserves it so a row
+   does not change height when a layer is switched on, and REB-476 already shrank
+   it as far as "60,794" allows. The panel had to grow. It still clears the map
+   controls in the corner and caps at the viewport on a phone. */
+.layers { padding:12px 13px; min-width:0; width:292px; max-width:calc(100vw - 24px); border-radius:14px; }
+/* DUPLICATED: this selector is also defined at line 240. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-title { font-size:var(--fs-micro); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+/* DUPLICATED: this selector is also defined at line 282. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-item { padding:7px 9px; }
+/* DUPLICATED: this selector is also defined at lines 315, 798. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+/* REB-476, Judy 12 August: the layer rows were falling onto two lines and
+   sitting oddly in the box. She asked for one line, unbold or smaller.
+
+   Both, because one was not enough: back down to micro AND to 500. REB-422 put
+   these up a rung to --fs-label at 600 when the panel had room; Title Case
+   spent that room again on 12 August, since "Clogged Storm Drains (311)" is a
+   good deal wider than "Clogged storm drains (311)".
+
+   `flex-wrap` on .l-item has to STAY — it is what lets the stepped legend sit
+   on its own row under the label (REB-451) — so the single line is bought with
+   `nowrap` on the label itself rather than by unwrapping the row. `min-width:0`
+   is the part that is easy to miss: without it a flex item refuses to shrink
+   below its content and the ellipsis never appears. Full name in `title` so
+   nothing is lost if one still truncates. */
+.l-label {
+  font-size:var(--fs-micro); font-weight:500;
+  min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.l-item.on .l-label { font-weight:600; }
+/* DUPLICATED: this selector is also defined at lines 319, 799. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.l-badge { font-size: var(--fs-micro); }
+
+/* ── impact modal onto the scale ── */
+.imp-eyebrow { font-size:var(--fs-micro); }
+.imp-h {
+  /* merged from 3 rules, 6 properties */
+  font-family: var(--font-display, inherit);
+  font-size: var(--fs-display);
+  line-height: 1.15;
+  margin: 8px 0 10px;
+  font-weight: 800;
+  letter-spacing: -.015em;
+}
+.imp-lead {
+  /* merged from 3 rules, 4 properties */
+  font-size: var(--fs-lead);
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+.imp-n {
+  /* merged from 3 rules, 5 properties */
+  font-family: var(--font-display, inherit);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary-d);
+}
+/* DUPLICATED: this selector is also defined at lines 737, 800. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.imp-l { font-size:var(--fs-micro); }
+.imp-sec-t {
+  /* merged from 2 rules, 6 properties */
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 18px 0 10px;
+}
+.imp-bar-lbl {
+  /* merged from 3 rules, 4 properties */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-label);
+}
+.imp-bar-n {
+  /* merged from 3 rules, 4 properties */
+  font-size: var(--fs-label);
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.imp-sowhat-t {
+  /* merged from 2 rules, 6 properties */
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--primary-d);
+  margin-bottom: 6px;
+}
+.imp-sowhat p {
+  /* merged from 3 rules, 4 properties */
+  font-size: var(--fs-body);
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+/* DUPLICATED: this selector is also defined at line 773. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.imp-cta { font-size:var(--fs-label); }
+
+/* ── story detail onto the scale ──
+   18 August: same shape as .scard-head/.scard-idwrap now — drop left,
+   type-over-name stacked right — instead of the drop sitting tiny and
+   inline inside the type eyebrow. Everything inside .sd-head still
+   inherits its colour, so the deep-blue background carries white text
+   without a per-element override — the one exception is .ex-badge above. */
+.sp-head-top { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.sp-drop { flex:none; display:flex; }
+.sp-head-id { min-width:0; }
+.sp-name { font-size:var(--fs-title); font-weight:800; letter-spacing:-.015em; line-height:1.15; }
+.sp-type { font-size:var(--fs-micro); font-weight:800; text-transform:uppercase; letter-spacing:.09em;
+  display:block; color:inherit; opacity:.82; margin-bottom:3px; }
+.sp-meta { font-size:var(--fs-micro); font-weight:600; row-gap:4px; }
+.sp-place { display:inline-flex; align-items:center; gap:4px; }
+.sp-place svg { width:12px; height:12px; opacity:.85; flex:none; }
+.sp-sep { opacity:.55; }
+.sp-tags { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:12px; }
+.sp-tags .sp-event { margin-top:0; }
+.sp-text { font-size:var(--fs-body); line-height:1.6; }
+.sp-cat-badge { font-size:var(--fs-micro); }
+
+/* ══ RESPONSIVE: desktop → iPad → iPhone ══ */
+@media (max-width:1023px) {
+  .side{ width:340px; }
+  #side.open ~ .welcome-hint{ left:calc(50% + 150px); }
+}
+@media (max-width:767px){
+  .side{ width:min(90vw,360px); }
+  /* 16px inputs stop iOS Safari from zooming on focus */
+  .side-search input, .side-filters select{ font-size:16px; }
+  /* Was 210px, which clipped "Predicted Flooding (Today)" to an ellipsis.
+     Judy, 19 August: make it wide enough to read. 292px is the measured fit
+     for the longest label (see the .layers comment above); max-width still
+     caps it to the viewport, so a 320pt screen gets 296 and it still fits. */
+  .layers{ width:292px; }
+  .imp-body{ padding:4px 16px 8px; }
+  .imp-h{ font-size:22px; }
+
+  /* On a phone the open panel covers almost the whole screen, so the things
+     that float over the map have to yield to it:
+     1. the welcome coach-mark goes back to the viewport centre. The tablet
+        rule above shifts it to the middle of the map still visible beside the
+        panel, which on a 390px screen pushed most of it off the right edge.
+     2. the "Stories" reopen button is redundant while the panel is open, and
+        it sat on top of the story cards.
+     3. the Map Layers card overlapped the panel's own header. It is not a
+        sibling of #side (it comes first in the DOM), so the state has to be
+        read off an ancestor. */
+  #side.open ~ .welcome-hint{ left:50%; }
+  #side.open ~ .fab{ display:none; }
+  body:has(#side.open) .layers{ display:none; }
+}
+
+/* ══ Side-pane story detail (map stays visible) + collaboration ══ */
+.side-detail { position:absolute; inset:0; z-index:6; background:var(--surface); display:flex; flex-direction:column;
+  transform:translateX(100%); visibility:hidden; transition:transform .3s cubic-bezier(.2,.7,.3,1), visibility .3s; }
+.side-detail.open { transform:translateX(0); visibility:visible; }
+/* REB-533. `flex:none` put 334px of content in a 319px pane at 320px wide and
+   clipped the Next arrow. It may shrink now, never grow, so 360 and up are
+   unchanged and only the narrowest screen truncates this label. */
+.sd-back { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  text-align:left; background:var(--page); border:0; border-bottom:1px solid var(--line);
+  padding:12px 16px; font-size:var(--fs-label); font-weight:700; color:var(--accent2); cursor:pointer; }
+.sd-back:hover { background:var(--accent-l); }
+/* Solid tint + measured ink, set inline (REB-443). The divider was a white
+   inset that only read against a dark gradient; on a tint it has to be a
+   darkening, so it uses the ink via currentColor instead. */
+.sd-head { flex:none; padding:20px 19px 18px; box-shadow:inset 0 -1px 0 rgba(0,0,0,.10); }
+.sd-body { flex:1; overflow-y:auto; padding:16px 17px 26px; }
+
+/* ── The tapped-place panel (REB-442) ──────────────────────────────
+   A place has no story type, so no tint to wear: it takes the app's own
+   surface with the teal action colour on the eyebrow. Deliberately quieter
+   than a story header — a story is somebody's account and should outrank a
+   set of counts. */
+.sd-head-place { background:var(--page); }
+
+.pd-eyebrow {
+  font-size:var(--fs-micro); font-weight:800; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--accent2); margin-bottom:3px;
+}
+
+.pd-title { margin:0; font-size:var(--fs-title); line-height:1.2; font-weight:750; color:var(--ink); }
+
+.pd-wait, .pd-empty { margin:0; font-size:var(--fs-body); color:var(--muted); line-height:1.5; }
+
+/* Same button as the sidebar's own Share Your Story CTA now (18 August,
+   Judy) — the Rainproof gradient, not a flat accent teal. Values copied
+   from .side-share-cta rather than a shared class, since the two live in
+   different shells and .side-share-cta's own selector reaches into the
+   sidebar's specific DOM position — this keeps the value in one place to
+   eyeball, not one to trust stayed in sync. */
+.pd-cta {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; margin-top:14px; padding:13px 16px;
+  border:0; border-radius:10px; cursor:pointer;
+  background:linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color:#fff; box-shadow:0 2px 10px rgba(46,180,215,.28);
+  font-family:inherit; font-weight:750; font-size:var(--fs-body);
+  transition:filter .15s, box-shadow .15s;
+}
+.pd-cta:hover { filter:brightness(1.06); box-shadow:0 3px 14px rgba(46,180,215,.4); }
+.pd-cta svg { width:17px; height:17px; }
+
+/* "Within a half mile of here" — the city's own record around this pin.
+   The two numbers sit side by side at equal size with a hairline between,
+   because the imbalance between them IS the point and a reader should get it
+   in one glance. Deliberately not a chart (nothing honest plots 307 to 1) and
+   deliberately no accent colour — teal means "this is a control" everywhere
+   else in the pane, so using it here made the flag look tappable. */
+/* ── the four sections (REB-443) ──
+   Person is the header. Account, Evidence and Action are these, in that order.
+   The rule between them is the only separator: the pane used to carry section
+   titles, borders and gaps all doing the same job, which is part of why
+   thirteen things read as thirteen things. */
+.sd-sec { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--line); }
+.sd-sec:first-child, .sd-account { padding-top: 0; margin-top: 0; border-top: 0; }
+/* A section with nothing in it must not leave a rule floating in the pane. The
+   city block is hidden whenever Socrata is down, so Evidence can legitimately
+   end up empty and has to collapse rather than show a bare line. */
+.sd-sec:empty { display: none; padding: 0; margin: 0; border-top: 0; }
+
+/* Long accounts. The cap is 5,000 characters, so an untouched story could push
+   the media, the city record and every action off the bottom. Clamped in CSS,
+   which keeps the whole text in the DOM for find-on-page and for screen
+   readers. */
+.sd-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 12;
+  line-clamp: 12;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sd-more {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-d, var(--primary));
+  font-size: var(--fs-label);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sd-more:hover { color: var(--text); }
+
+.sd-city { margin-top:18px; }
+/* #54ac55, Judy's literal ask (18 August) — same hex as the hashtag colour
+   and the section headings, applied here on the same basis: flagged once
+   (2.83:1 on white at this size/weight, under the 4.5 normal text needs),
+   kept because it's a deliberate brand choice on record, not oversight. */
+.sd-city-h { font-size:var(--fs-micro); font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  color:#54ac55; margin:0 0 13px; }
+/* Names the two sources under the heading (18 August, `cityData.subheading`
+   — see the note in js/ui.js). Quieter than the heading above it (no caps,
+   no letter-spacing) since it is a caption, not a second label. */
+.sd-city-caption { font-size:var(--fs-micro); color:var(--muted); line-height:1.45; margin:-8px 0 13px; }
+.sd-city-pair { display:grid; grid-template-columns:1fr 1px 1fr; gap:14px; align-items:start; }
+.sd-city-div { background:var(--line); align-self:stretch; }
+.sd-city-n { display:block; font-size:1.5rem; font-weight:800; line-height:1; letter-spacing:-.025em;
+  color:var(--ink); font-variant-numeric:tabular-nums; }
+/* A fixed category NAME now (18 August, Judy's audit — see the note on
+   `labelHalfMile` in config.json), styled small-caps like the block heading
+   above it rather than as a sentence, so "Reported to 311" and "Green
+   Infrastructure" read as the same kind of label instead of one being a
+   proper term in Title Case and the other a lowercase noun phrase. */
+.sd-city-l { display:block; font-size:var(--fs-micro); font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--faint); line-height:1.3; margin-top:6px; }
+/* The short "since 2021" line a category name doesn't have room to carry on
+   its own. Sentence case, no transform — this one IS a sentence fragment. */
+.sd-city-desc { display:block; font-size:var(--fs-micro); color:var(--muted); line-height:1.4; margin-top:1px; }
+.sd-city-sub { display:block; font-size: var(--fs-micro); color:var(--faint); line-height:1.4; margin-top:5px; }
+/* Each count wears its map-layer colour as a dot, so the number ties back to
+   the layer you can switch on. Only the dot carries colour; the text stays
+   ink, and the label always sits beside its own swatch — which is what makes
+   the set readable when two of the hues converge under colour blindness. */
+.sd-city-key { display:block; margin-top:3px; }
+.sd-city-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px;
+  vertical-align:baseline; flex:none; }
+.sd-city-l .sd-city-dot { margin-right:4px; }
+/* FloodNet only (18 August, Judy: sync with the map, where it draws as a
+   diamond on purpose) — a rotated square reads as a diamond at this size
+   without a second SVG shape to keep in step with the circle. Sized up a
+   touch: a 7px square on its corner LOOKS smaller than a 7px circle, same
+   optical-size correction the map's own diamond marks already make. */
+.sd-city-dot.diamond { width:6px; height:6px; border-radius:1px; transform:rotate(45deg); margin-right:6px; }
+.sd-city-l .sd-city-dot.diamond { margin-right:5px; }
+
+/* FloodNet, the measured line (REB-432). This used to sit under a plain-
+   language "gap" flag paragraph, same shape as this block — removed 18
+   August, Judy's ask, so FloodNet is the first bordered section now. It is
+   the third dataset in this block and the only one that measures rather than
+   counts what people reported, so it reads as a footnote to the pair rather
+   than a third column in it — adding a cell would break the two-up comparison
+   that is the entire point of `.sd-city-pair`.
+
+   18 August, second pass: the count is `.sd-city-n`/`.sd-city-l` now, the
+   same big-number-plus-name shape the pair above it uses — Judy's audit
+   again, the sensor figure read smaller and less important next to 603 and
+   1 when it was inline in a sentence. The sentence itself (`.sd-city-desc-p`)
+   stays unbolded, with `.sd-city-num` (the numSpan() wrapper in js/ui.js)
+   carrying weight for the numbers embedded in it.
+
+   18 August, third pass: `.sd-city-num` lost its own colour. It shipped
+   #2db4d9 (brand blue) so the eye would land on the figures — Judy's read,
+   once she saw it live, was the opposite: one blue accent inside an
+   otherwise all-muted sentence read as off-balance, not emphasised. Bold
+   alone still marks the numbers; colour doesn't need to do it twice. */
+.sd-city-block { margin-top:13px; padding-top:12px; border-top:1px solid var(--line); }
+.sd-city-top { display:flex; align-items:baseline; gap:8px; }
+.sd-city-top .sd-city-l { margin-top:0; }
+.sd-city-desc-p { font-size:var(--fs-micro); font-weight:400; color:var(--muted); line-height:1.5; margin:4px 0 0; }
+.sd-city-num { font-weight:800; font-variant-numeric:tabular-nums; }
+
+/* One unframed action row. The old bordered card was one of four stacked
+   boxes; without the frame the story stays the only thing that looks important. */
+.sd-act { margin-top:20px; }
+.sd-act-row { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* Add-a-story: the pane's primary action, wearing the same brand gradient as
+   the floating "Share Your Story" button so the one thing a resident is asked
+   to do looks the same wherever it appears. */
+.sd-addnear { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:11px 16px; border:none; border-radius:999px;
+  background:var(--cta, linear-gradient(135deg,var(--primary),var(--accent))); color:var(--cta-text,#fff);
+  font-family:inherit; font-size:var(--fs-label); font-weight:800; cursor:pointer;
+  box-shadow:0 3px 12px var(--cta-shadow, rgba(0,0,0,.14));
+  transition:filter .14s, transform .14s; }
+.sd-addnear svg { width:15px; height:15px; flex:none; }
+.sd-addnear:hover { filter:brightness(1.08); transform:translateY(-1px); }
+
+/* Copy link (REB-428). Tier 4, next to "Me too": a way to hand this story to
+   someone, not a thing being asked for. Confirms in place rather than with a
+   toast, because the eye is already on the button that was pressed. */
+.sd-link { display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:10px 13px; border:1.5px solid var(--line-2); border-radius:999px;
+  background:var(--surface); color:var(--accent2);
+  font-family:inherit; font-size:var(--fs-label); font-weight:700; cursor:pointer;
+  transition:background .14s, border-color .14s, color .14s; }
+.sd-link svg { width:15px; height:15px; flex:none; }
+/* Icon only at rest so the row fits without "Add your story" wrapping; the
+   confirmation fills this span and expands the button for a moment. */
+.sd-link-txt:empty { display:none; }
+.sd-link:hover { background:var(--accent-l); }
+.sd-link.copied { background:var(--accent-l); border-color:var(--accent2); }
+/* Only appears when the clipboard API is unavailable — an https-only API, so
+   this is the path on a plain-http preview. */
+.sd-link-fallback { flex:1 0 100%; margin-top:8px; padding:9px 12px; font-family:inherit;
+  font-size:var(--fs-micro); color:var(--ink); background:var(--page);
+  border:1.5px solid var(--line-2); border-radius:10px; }
+
+/* A permalink whose story is gone. Wears the welcome hint's chrome so it reads
+   as the same class of transient note, in the same place. */
+.gone-note { max-width:min(420px, calc(100vw - 32px)); }
+
+/* Discovery list — the lightest tier in the pane: a dot, a name, a clipped
+   line. Four bordered cards here used to compete with everything above. */
+.sd-near { margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
+.sd-near-h { display:flex; align-items:center; gap:6px; font-size:var(--fs-micro); font-weight:800;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:0 0 8px; }
+.sd-near-h svg { width:13px; height:13px; flex:none; }
+.sd-near-item { display:flex; align-items:center; gap:9px; padding:8px 0; cursor:pointer;
+  border-bottom:1px solid var(--line); transition:opacity .14s; }
+.sd-near-item:last-child { border-bottom:0; }
+.sd-near-item:hover { opacity:.62; }
+/* Holds the raindrop now, not a colour circle (REB-463). */
+.sd-near-dot { flex:none; line-height:0; display:flex; }
+.sd-near-txt { flex:1; min-width:0; font-size:var(--fs-micro); color:var(--muted); line-height:1.45;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sd-near-txt b { color:var(--ink); font-weight:750; }
+.sd-near-hood { flex:none; font-size: 12.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--faint); }
+
+/* ══ "Me too" echo — a thumbs-up count, apart from "Add your story" ══ */
+/* 18 August: a bare thumbs-up + count (Judy's ask, closer to an upvote),
+   and reacted is no longer a dead end — tapping it again un-reacts (see
+   reactMetoo in js/ui.js). `.mt-undo` sits hidden under the count and swaps
+   in on hover/focus of a reacted button, so intent is visible before the
+   click rather than hidden behind a title tooltip. */
+.scard-metoo { display:inline-flex; align-items:center; gap:6px;
+  padding:7px 13px; border-radius:999px; border:none; background:#EAF6F1;
+  color:#1C6E52; font-family:inherit; font-size:var(--fs-micro); font-weight:700; cursor:pointer;
+  transition:background .14s, color .14s; }
+.scard-metoo svg { width:13px; height:13px; flex:none; }
+.scard-metoo .mt-n { background:rgba(255,255,255,.6); color:#1C6E52; padding:1px 7px; border-radius:999px; font-variant-numeric:tabular-nums; }
+.scard-metoo .mt-undo { display:none; }
+.scard-metoo:hover:not(.reacted) { background:var(--filter-color); color:#fff; }
+.scard-metoo:hover:not(.reacted) .mt-n { background:rgba(255,255,255,.3); color:#fff; }
+.scard-metoo.reacted { background:var(--filter-color); color:#fff; }
+.scard-metoo.reacted .mt-n { background:rgba(255,255,255,.3); color:#fff; }
+.scard-metoo.reacted:hover .mt-n, .scard-metoo.reacted:focus-visible .mt-n { display:none; }
+.scard-metoo.reacted:hover .mt-undo, .scard-metoo.reacted:focus-visible .mt-undo { display:inline; }
+
+/* Detail "Me too": the quieter half of the action row — an outline pill beside
+   the solid Add-a-story button. Sized to its label, not stretched.
+   Same green as the card's own upvote (.scard-metoo) now, 18 August — Judy:
+   the two should read as one control, not two different colours for the
+   same action depending on which surface you're on. */
+.sd-metoo { flex:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:11px 16px; border-radius:999px; border:none; background:#EAF6F1;
+  color:#1C6E52; font-family:inherit; font-size:var(--fs-label); font-weight:800; cursor:pointer;
+  transition:background .14s, color .14s; }
+.sd-metoo svg { width:16px; height:16px; flex:none; }
+.sd-metoo .mt-n { background:rgba(255,255,255,.6); color:#1C6E52; padding:1px 9px; border-radius:999px; font-variant-numeric:tabular-nums; }
+.sd-metoo .mt-undo { display:none; }
+.sd-metoo:hover:not(.reacted) { background:var(--filter-color); color:#fff; }
+.sd-metoo:hover:not(.reacted) .mt-n { background:rgba(255,255,255,.3); color:#fff; }
+.sd-metoo.reacted { background:var(--filter-color); color:#fff; }
+.sd-metoo.reacted .mt-n { background:rgba(255,255,255,.3); color:#fff; }
+.sd-metoo.reacted:hover .mt-n, .sd-metoo.reacted:focus-visible .mt-n { display:none; }
+.sd-metoo.reacted:hover .mt-undo, .sd-metoo.reacted:focus-visible .mt-undo { display:inline; }
+
+/* REB-533. Both rules above need a hover, and a phone has none, so on touch a
+   reacted pill kept its undo hidden forever and read as the dead end the swap
+   was added to remove. Same swap, no hover required. */
+@media (hover: none) {
+  .scard-metoo.reacted .mt-n, .sd-metoo.reacted .mt-n { display:none; }
+  .scard-metoo.reacted .mt-undo, .sd-metoo.reacted .mt-undo { display:inline; }
+}
+
+/* Impact panel: engagement-within-stories callout. */
+.imp-echo { margin:18px 0 6px; padding:15px 18px; border-radius:14px;
+  background:var(--accent-l); border:1px solid var(--line); }
+.imp-echo-top { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.imp-echo-n { font-size:26px; font-weight:800; color:var(--accent2); letter-spacing:-.02em; line-height:1; font-variant-numeric:tabular-nums; }
+.imp-echo-l { font-size:var(--fs-label); font-weight:700; color:var(--ink); }
+.imp-echo-p { font-size:var(--fs-body); color:var(--muted); line-height:1.55; margin:8px 0 0; }
+
+/* ══ About modal ══ */
+.ab-body { padding:4px 22px 10px; overflow-y:auto; }
+.ab-eyebrow { font-size:var(--fs-micro); font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--primary-d); }
+.ab-h { font-size:var(--fs-display); font-weight:800; letter-spacing:-.02em; margin:8px 0 10px; line-height:1.1; }
+.ab-lead { font-size:var(--fs-lead); color:var(--muted); line-height:1.55; margin:0 0 8px; }
+.ab-sec-t { font-size:var(--fs-micro); font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--faint); margin:20px 0 6px; }
+.ab-p { font-size:var(--fs-body); color:var(--ink); line-height:1.6; margin:0; }
+.ab-p + .ab-p, .ab-list + .ab-p { margin-top:10px; }
+/* Labelled runs in the About copy. The label is bold and inline, so a line
+   reads "Flooding: your experience..." rather than as a two-line heading. */
+.ab-list { margin:10px 0 0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px; }
+.ab-list li { font-size:var(--fs-body); color:var(--ink); line-height:1.6; }
+.ab-list li b { font-weight:800; }
+.ab-cta-row { display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin-top:24px; }
+.ab-cta { display:inline-flex; align-items:center; gap:8px; border:none; border-radius:999px;
+  background:var(--cta, linear-gradient(135deg,var(--primary),var(--accent))); color:var(--cta-text,#fff);
+  font-family:inherit; font-size:var(--fs-label); font-weight:800; padding:12px 22px; cursor:pointer;
+  box-shadow:0 6px 18px var(--cta-shadow,rgba(0,0,0,.16)); transition:filter .14s, transform .14s; }
+.ab-cta svg { width:16px; height:16px; }
+.ab-cta:hover { filter:brightness(1.05); transform:translateY(-1px); }
+.ab-link { font-size:var(--fs-label); font-weight:700; color:var(--accent2); text-decoration:none; }
+.ab-link:hover { text-decoration:underline; }
+
+/* ══════════════════════════════════════════════════════════════
+   TYPE SCALE — intake, consent, chat, kiosk & modals onto the six
+   rungs. core.css set these ad-hoc; routing them through the tokens
+   gives every surface one hierarchy (and makes them responsive with
+   the scale). Icons, the kiosk full-screen headline and big display
+   figures stay off-scale on purpose.
+   ══════════════════════════════════════════════════════════════ */
+/* micro (11.5) — helper text, captions, eyebrows, tiny labels */
+.fhint, .chr, .err-msg, .tc-desc, .uz-sub, .rec-status, .rec-retry, .loc-sub,
+.p-rm, .consent-desc, .rb-hint, .rb-warn, .chat-head .cx-s, .cx-hint, .cx-att,
+.ka-org, .ka-spark, .sparks-lbl, .s-ref, .s-handoff, .sp-section-title,
+.sp-reach-cap, .gal-aud-lbl { font-size: var(--fs-micro); }
+
+/* label (13) — field labels, buttons, choice labels, chips, names */
+.flbl, .err-btn, .btn-nx, .btn-bk, .form-sheet .sheet-head p, .tc-name, .uz-lbl,
+.uz-cam, .loc-name, .loc-st, .consent-label, .rb-label, .cx-opt, .fcat, .mtab,
+.pin-hint, .welcome-hint, .welcome-hint button, .sp-reach-btn, .sp-reach-t,
+.s-view { font-size: var(--fs-label); }
+
+/* body (14.5) — reading text, inputs, message bubbles */
+.field, .cx-bub, .cx-input, .success-wrap p, .kw-card p,
+.sp-reach-val { font-size: var(--fs-body); }
+
+/* lead (15) — the conversational-intake title */
+.chat-head .cx-t { font-size: var(--fs-lead); }
+
+/* title (18) — step & modal headings join the panel/story title rung */
+.form-sheet .sheet-head h2, .success-wrap h3, .kw-card h2 { font-size: var(--fs-title); }
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR v3 — one control language: segmented types with share
+   bars, tappable category + storm chips, a neighborhood select,
+   and a removable active-filter row. Supersedes cat-row/side-filters.
+   ══════════════════════════════════════════════════════════════ */
+.side-hdr { padding:13px 15px 12px; }
+
+/* Story type: segmented toggle, one row of four */
+.seg { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:11px; }
+.seg-i { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 3px 7px;
+  border:1.5px solid var(--line); border-radius:11px; background:var(--surface); cursor:pointer;
+  transition:border-color .14s, box-shadow .14s; }
+.seg-i:hover { border-color:var(--line-2); }
+.seg-i.on { border-color:var(--c); box-shadow:inset 0 0 0 1px var(--c); }
+.seg-i .dropmark { margin-bottom:1px; }
+.seg-n { font-size:var(--fs-title); font-weight:800; line-height:1; color:var(--ink); font-variant-numeric:tabular-nums; }
+.seg-i.on .seg-n { color:var(--c); }
+.seg-l { font-size: var(--fs-micro); font-weight:700; color:var(--faint); text-align:center; line-height:1.1; }
+.seg-i.on .seg-l { color:var(--c); }
+.seg-bar { width:100%; height:3px; border-radius:2px; background:var(--line); overflow:hidden; margin-top:3px; }
+.seg-bar i { display:block; height:100%; border-radius:2px; }
+
+/* Facets: category + storm chips + neighborhood */
+.facets { margin-top:13px; display:flex; flex-direction:column; gap:12px; }
+.facet-lbl { font-size:var(--fs-micro); font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--faint); margin-bottom:7px; display:flex; align-items:baseline; gap:7px; }
+.facet-hint { font-size: 12.5px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--faint); opacity:.85; }
+.chip-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+.fchip { display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--line); background:var(--surface);
+  border-radius:8px; padding:5px 9px; font-size:var(--fs-label); font-weight:600; color:var(--muted);
+  cursor:pointer; font-family:inherit; transition:border-color .14s, color .14s, background .14s; }
+.fchip:hover { border-color:var(--line-2); color:var(--ink); }
+.fchip.on { border-color:var(--accent2); background:var(--accent-l); color:var(--accent2); }
+.fchip-n { font-size:var(--fs-micro); font-weight:700; color:var(--faint); font-variant-numeric:tabular-nums; }
+.fchip.on .fchip-n { color:var(--accent2); }
+
+#hoodSel { width:100%; font-size:var(--fs-label); font-family:inherit; color:var(--ink);
+  padding:9px 30px 9px 11px; border-radius:9px; border:1.5px solid var(--line); background-color:var(--surface);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237C929B' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; -webkit-appearance:none; appearance:none; cursor:pointer; }
+#hoodSel:focus { border-color:var(--accent2); outline:none; }
+
+/* Active-filter pills: the one place to see and clear filters */
+.active-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+/* DUPLICATED: this selector is also defined at line 1345. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.achip { display:inline-flex; align-items:center; gap:6px; background:var(--accent-l); color:var(--accent2);
+  border:1px solid transparent; border-radius:999px; padding:4px 11px; font-size:var(--fs-micro); font-weight:700;
+  cursor:pointer; font-family:inherit; }
+
+/* DUPLICATED: this selector is also defined at line 1359. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+/* Clickable filter badges inside the story detail head */
+.sp-cat-badge { cursor:pointer; font-family:inherit; }
+
+/* DUPLICATED: this selector is also defined at line 1368. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.sp-event { display:inline-flex; align-items:center; gap:4px; margin-top:11px; border:1px solid rgba(255,255,255,.3);
+  cursor:pointer; font-family:inherit; background:rgba(255,255,255,.16); color:#fff; border-radius:999px;
+  padding:5px 12px; font-size:var(--fs-micro); font-weight:700; }
+
+@media (max-width:767px){
+  /* 16px targets stop iOS Safari zooming on focus */
+  #hoodSel{ font-size:16px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR v4 — "explore bar" (Airbnb / Google Maps). Compact
+   Type / Category / When / Area buttons that drop a picker, then
+   removable active filters. Supersedes the v3 segmented styles.
+
+   17 August (REB-503): story types were a row of four raindrop
+   tiles here (`.type-pills`/`.tpill`, REB-464/468/473) — moved into
+   the filter popover as a fifth facet, same as Category/Event/Year.
+   Removed rather than kept dead: the glyph-tile treatment doesn't
+   carry over, since the popover is text rows for every other facet
+   too, and a lone glyph-tile facet would read as a different control
+   language from its four neighbours. ══════════════════════════════ */
+.side-hdr { padding:13px 14px 12px; position:relative; }
+/* 18 August. The address geocoder, reskinned to Direction C's bordered
+   query-field treatment: an icon box fused to the input, one shared border,
+   rather than a plain bordered input with no icon. Still the pane's primary
+   control (17 August) — the suggestion list still borrows the funnel
+   popover's own shadow/radius/row language (.filter-wrap, .pop-opt) rather
+   than inventing a second one. */
+/* ADDRESS SEARCH OVER THE MAP — 19 August, the director. The pane is for
+   stories; this is the map's own control now. It tracks the pane: pinned to
+   the left edge when the pane is shut, pushed past it when the pane is open,
+   on the same easing as the pane's own slide so the two read as one movement.
+   z-index 12 clears the pane (10) and stays under the header (20). */
+.map-search {
+  position: fixed;
+  top: calc(var(--hdr-h, 58px) + 10px);
+  left: 12px;
+  width: min(340px, calc(100vw - 24px));
+  z-index: 12;
+  padding: 12px 13px 13px;
+  border-radius: 12px;
+  /* On white pane this needed no ground of its own. Over a basemap it does:
+     an opaque card, a real border and a shadow deep enough to lift it off the
+     tiles, or the input reads as part of the map. */
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 32px -10px rgba(15, 38, 48, .38), 0 2px 8px rgba(15, 38, 48, .10);
+  transition: left .35s cubic-bezier(.34, 1.2, .64, 1);
+}
+body:has(#side.open) .map-search { left: calc(var(--side-w) + 12px); }
+/* The phone has its own address bar in the map bar (#mbAddrIn); two would be
+   two. */
+@media (max-width: 767px) { .map-search { display: none; } }
+/* The prompt keeps its place above the input; only its spacing changes, since
+   the card supplies the padding the pane used to. */
+.map-search .side-addr-prompt { margin: 0 0 9px; }
+.map-search .side-search { margin-bottom: 0; }
+
+.side-search {
+  position: relative;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  /* Deliberately NOT overflow:hidden — #addrSugg is an absolutely-positioned
+     child of this element (same reason as .side-toolbar above), and clipping
+     the container to round the icon box's square corners clipped the whole
+     suggestion list off-screen with it. The icon box rounds its own left
+     corners instead. */
+  transition: border-color .15s;
+}
+.side-search:focus-within { border-color: var(--story-blue); }
+.side-addr-ico {
+  flex: none; width: 38px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--story-blue); border-right: 1.5px solid var(--line);
+  border-radius: 6px 0 0 6px;
+}
+.side-search input { border-radius: 0 6px 6px 0; }
+.side-search input {
+  flex: 1; min-width: 0; border: none; background: none; outline: none;
+  padding: 10px 12px; font-family: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--text);
+}
+.side-search input::placeholder { color: var(--muted); font-weight: 400; }
+
+/* 17 August. One line above the address bar saying why it's worth using —
+   text is a placeholder (see the HTML comment on #addrPrompt), only the
+   slot and its styling are final here. */
+.side-addr-prompt {
+  margin: 0 0 8px; font-size: var(--fs-micro); font-weight: 600;
+  color: var(--muted); line-height: 1.35;
+}
+/* The "or" between the address bar and the Share Your Story button — a
+   hairline through the middle, the word sitting on top of it, the way a
+   login form separates "sign in" from "sign in with Google". */
+.side-or {
+  display: flex; align-items: center; gap: 8px;
+  /* Was 10px, the last thing under the 12.5px floor (Judy, 19 August). */
+  margin: 10px 0; font-size: var(--fs-micro); font-weight: 800;
+  color: var(--faint); text-transform: uppercase; letter-spacing: .06em;
+}
+.side-or::before, .side-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+/* Judy's sidebar-mockup review, 18 August: the CTA took Direction C's
+   outlined-green treatment — an outline so it stayed visibly secondary to
+   the address bar above it. 18 August, later: filled with the header's own
+   gradient instead, at Judy's ask, so the one button that actually adds a
+   story is unmistakably the loudest thing in the pane. */
+.side-share-cta {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px;
+  border: none; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff; box-shadow: 0 2px 10px rgba(46, 180, 215, .28);
+  font-family: inherit; font-size: var(--fs-label); font-weight: 750; cursor: pointer;
+  transition: filter .15s, box-shadow .15s;
+}
+.side-share-cta:hover { filter: brightness(1.06); box-shadow: 0 3px 14px rgba(46, 180, 215, .4); }
+.side-share-cta svg { flex: none; }
+
+.addr-sugg {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 5;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--surface);
+  box-shadow: 0 16px 40px -12px rgba(15, 38, 48, .32), 0 2px 8px rgba(15, 38, 48, .08);
+  max-height: 260px; overflow-y: auto; padding: 4px;
+}
+.addr-sugg[hidden] { display: none; }
+.addr-opt {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 9px 10px; border: none; border-radius: 9px; background: none; cursor: pointer;
+  font-family: inherit; font-size: var(--fs-label); color: var(--ink); line-height: 1.3;
+}
+.addr-opt svg { flex: none; color: var(--muted); }
+.addr-opt:hover, .addr-opt.hi { background: var(--bg); }
+.addr-empty { padding: 10px 12px; font-size: var(--fs-label); color: var(--muted); }
+
+/* The submission form's location step (js/form.js) — an address search
+   reusing .addr-sugg/.addr-opt above rather than a second copy; `.field`
+   already gives the input the rest of the form's look. */
+.loc-addr-wrap { position: relative; margin-bottom: 10px; }
+
+/* The search box that moved behind its own icon (REB-507's search bar is now
+   this, not the address bar) — a bare input inside the funnel popover's own
+   box (.filter-wrap, reused), so it needs its own padding rather than the
+   wider .side-search treatment. */
+#searchWrap input {
+  width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  font-size: var(--fs-label); color: var(--text); outline: none;
+}
+#searchWrap input:focus { border-color: var(--primary); background: #fff; }
+
+/* Category / When / Area buttons */
+.filter-bar { display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+/* Judy, REB-467: "too much blue on the sidepane" — the filter buttons take the
+   Rainproof green, in `--filter-color`. It used to borrow the tile's active
+   token, which meant changing the tile hover colour silently repainted this row
+   too — exactly what REB-468 would have done. Filters are not stories and now
+   have their own value.
+
+   The label stays dark ink at 5.85:1 on the green. White here would be 2.68:1,
+   and unlike the story-type tiles above (where Judy chose white deliberately)
+   nothing has asked for it, so this one keeps the readable pairing.
+
+   `.act` and `.open` are rings rather than a different fill, matching how the
+   selected story-type tile marks itself. That keeps one green across the whole
+   pane and still gives each state a shape. */
+/* REB-472 REPLACES THE GREEN. Judy, 12 August: white background, no coloured
+   fill on the buttons, minimal and polished. That supersedes REB-467's green
+   row, which existed because she had said there was "too much blue on the
+   sidepane" — the answer to too much colour turned out to be less colour, not
+   a different colour.
+
+   Keeping `--filter-color` as the token even though nothing fills with it any
+   more: it is what REB-469 split off `--story-tile-active` so this row could
+   change without repainting the story tiles, and it is now the accent on the
+   active state. The split is the reason this change is small.
+
+   Dark ink on white is 15.8:1, so the count no longer needs the opacity trick
+   REB-467 gave it to survive 1.22:1 on the green. */
+.fbtn { display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border-radius:9px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:inherit;
+  font-size:var(--fs-micro); font-weight:600; cursor:pointer;
+  transition:border-color .14s, box-shadow .14s, background .14s; }
+.fbtn:hover { border-color:var(--muted); background:var(--bg); }
+.fbtn-cv { font-size: 12.5px; color:var(--muted); margin-left:1px; }
+/* A chosen facet is the one thing allowed to carry colour here, because
+   "which of these is on" is the question the row has to answer at a glance. */
+.fbtn.act { border-color:var(--filter-color); box-shadow:inset 0 0 0 1px var(--filter-color); font-weight:700; }
+.fbtn.act .fbtn-cv { color:var(--ink); }
+.fbtn.open { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+
+/* REB-472 round two. Judy: make it a small window that opens next to the
+   funnel, not a section that pushes the pane down. It is a popover now.
+
+   Anchored to `.side-top` rather than to the header, so `top: 100%` is exactly
+   "under the row the funnel is in" and no hard-coded offset can drift when the
+   title or the count changes height.
+
+   z-index 5 is chosen, not arbitrary: above the static feed underneath it, and
+   deliberately BELOW `.side-detail` at 6. An open story covers the whole pane
+   with `inset: 0`, and a filter popover floating on top of somebody's story
+   would be the obvious bug. Anything above 6 here is wrong.
+
+   Width is `min(290px, 100%)`, and the 100% is the point: the containing block
+   is `.side-top`, so it tracks the PANE's content width rather than the
+   viewport. Measured with `100vw` first and it was wrong — at a 320px viewport
+   the pane's content box is 259px, so a viewport-derived 280px popover hung
+   20px past the pane's left padding. The pane is not the window. Capped in
+   height with its own scroll because the Area dropdown can list every
+   neighbourhood in the city. */
+.filter-wrap {
+  position:absolute; top:calc(100% + 7px); right:0; z-index:5;
+  width:min(290px, 100%);
+  padding:10px; border:1px solid var(--line); border-radius:14px;
+  background:var(--surface); box-shadow:0 10px 30px rgba(15,38,48,.16);
+  /* 60vh alone overflowed a short viewport: in phone landscape the popover
+     opened 220px down a 393px screen and ran 63px past the bottom. `--pop-max`
+     is the real room below it, set by fitPopover() in js/ui.js on open. */
+  max-height:min(60vh, 420px, var(--pop-max, 420px)); overflow-y:auto; overscroll-behavior:contain;
+  text-align:left;
+}
+.filter-wrap[hidden] { display:none; }
+
+/* REB-472 round three. Judy: vertical, the way a clothing store does it.
+
+   A COLUMN of named sections rather than a row of buttons, and the reason that
+   is better here is not only that it is familiar. Across a row each button's
+   label became the chosen value, so the row stopped saying what could be
+   filtered the moment you filtered anything — "Category" turned into "Flash
+   flooding" and the word Category left the pane. In a column the name stays put
+   and the count sits beside it.
+
+   Sections open independently, no accordion. A shopping filter that shuts Size
+   to open Colour is the thing that makes those feel fiddly, and the popover
+   scrolls anyway. */
+.filter-wrap .filter-bar { display:block; margin-top:0; }
+.facet + .facet { border-top:1px solid var(--line); }
+.facet-h {
+  display:flex; align-items:center; gap:8px; width:100%;
+  padding:9px 4px; background:none; border:0; cursor:pointer;
+  font-family:inherit; font-size:var(--fs-micro); font-weight:700; color:var(--ink);
+  text-align:left;
+}
+.facet-h:hover { color:var(--primary-dark, var(--ink)); }
+.facet-l { flex:1; min-width:0; }
+/* The count of what is chosen in this section, so a collapsed section still
+   says whether it is doing anything. Same job as the dot on the funnel, one
+   level down. */
+.facet-n {
+  flex:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px;
+  background:var(--filter-color); color:var(--ink);
+  font-size:11px; font-weight:700; line-height:18px; text-align:center;
+}
+.facet-cv { flex:none; display:flex; color:var(--muted); transition:transform .16s; }
+.facet.open .facet-cv { transform:rotate(180deg); }
+.facet-body { padding-bottom:6px; }
+
+/* .filter-btn is a functional marker only now (JS targets #searchBtn/
+   #filterBtn by id and .view-btn by class) — its visual styling, including
+   the .fdot badge, moved to .side-tool as part of the 18 August toolbar
+   unification. Kept as a comment rather than silently vanishing, since the
+   class still appears in index.html. */
+
+/* The dropdown picker under a filter button. Options read as a calm list:
+   regular weight, a soft brand-tinted hover, and the selected row promoted
+   with weight + a check — so only the active choice is emphasised. */
+.pop { margin-top:10px; border:1px solid var(--line); border-radius:14px; background:var(--surface);
+  box-shadow:0 16px 40px -12px rgba(15,38,48,.32), 0 2px 8px rgba(15,38,48,.08); overflow:hidden; }
+.pop[hidden] { display:none; }
+.pop-list { max-height:270px; overflow-y:auto; padding:4px; scrollbar-width:thin; }
+.pop-opt { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px;
+  border:none; border-bottom:1px solid var(--line); background:none; cursor:pointer; font-family:inherit;
+  font-size:var(--fs-label); font-weight:500; color:var(--ink); line-height:1.25;
+  transition:background .12s, color .12s; }
+/* Hairline separators between rows; the last row and any hovered/selected row
+   drop the line so the tint reads as one clean block. */
+.pop-opt:last-child { border-bottom:0; }
+.pop-opt:hover { background:var(--accent-l); color:var(--accent2); border-bottom-color:transparent; }
+.pop-opt-l { flex:1; min-width:0; }
+.pop-opt-n { flex:none; font-size:var(--fs-micro); font-weight:600; color:var(--faint); font-variant-numeric:tabular-nums; }
+/* multi-select checkbox — signals you can pick more than one */
+.pop-box { flex:none; width:16px; height:16px; border-radius:5px; border:1.5px solid var(--line-2);
+  background:var(--surface); display:flex; align-items:center; justify-content:center; transition:background .12s, border-color .12s; }
+.pop-opt.on { color:var(--accent2); font-weight:700; background:var(--accent-l); border-bottom-color:transparent; }
+.pop-opt.on .pop-box { background:var(--accent2); border-color:var(--accent2); }
+.pop-opt.on .pop-box::after { content:"✓"; color:#fff; font-size: 12.5px; font-weight:800; line-height:1; }
+.pop-opt.on .pop-opt-n { color:var(--accent2); }
+.pop-opt.z { opacity:.42; }                 /* nothing matches given the other facets */
+.pop-clear { display:block; width:100%; text-align:center; padding:10px 9px; margin-top:2px;
+  border:none; border-top:1px solid var(--line); background:none; cursor:pointer; font-family:inherit;
+  font-size:var(--fs-micro); font-weight:700; color:var(--faint); }
+.pop-clear:hover { color:var(--accent2); background:var(--accent-l); }
+.pop-empty { padding:16px; text-align:center; font-size:var(--fs-micro); color:var(--faint); }
+
+/* Active-filter pills */
+.active-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; }
+/* DUPLICATED: this selector is also defined at line 1256. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.achip { display:inline-flex; align-items:center; gap:6px; background:var(--accent-l); color:var(--accent2);
+  border:1px solid transparent; border-radius:999px; padding:4px 11px; font-size:var(--fs-micro); font-weight:700;
+  cursor:pointer; font-family:inherit; }
+.achip:hover {
+  /* merged from 2 rules, 1 properties */
+  filter: brightness(.96);
+}
+.achip-x {
+  /* merged from 2 rules, 2 properties */
+  opacity: .6;
+  font-weight: 800;
+}
+.achip.clear-all {
+  /* merged from 2 rules, 3 properties */
+  background: transparent;
+  color: var(--faint);
+  text-decoration: underline;
+}
+
+/* `.side-foot` was here: a row whose only job was to right-align the view
+   toggle. The toggle moved onto the title line in REB-457 and the row went
+   with it, which is 35px of chrome plus its 12px margin returned to the
+   stories. */
+
+/* DUPLICATED: this selector is also defined at line 1261. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+/* Clickable filter badges inside the story detail head */
+.sp-cat-badge { cursor:pointer; font-family:inherit; }
+.sp-cat-badge:hover {
+  /* merged from 2 rules, 1 properties */
+  background: rgba(255,255,255,.4);
+}
+/* DUPLICATED: this selector is also defined at line 1262. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.sp-event { display:inline-flex; align-items:center; gap:4px; margin-top:11px; border:1px solid rgba(255,255,255,.3);
+  cursor:pointer; font-family:inherit; background:rgba(255,255,255,.16); color:#fff; border-radius:999px;
+  padding:5px 12px; font-size:var(--fs-micro); font-weight:700; }
+.sp-event:hover {
+  /* merged from 2 rules, 1 properties */
+  background: rgba(255,255,255,.3);
+}
+.sp-event-go {
+  /* merged from 2 rules, 2 properties */
+  opacity: .8;
+  font-weight: 600;
+}
+
+@media (max-width:767px){
+  .side-search input{ font-size:16px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GALLERY v2 — synced with the card / pill language: roomier
+   spacing, card-matching radius, and a story-type colour code
+   (the same raindrop) on every tile.
+   ══════════════════════════════════════════════════════════════ */
+.gallery { gap:9px; padding:11px 10px 20px; }
+.gal-item { border-radius:12px; border:1px solid var(--line); background:var(--page);
+  box-shadow:0 1px 2px rgba(15,38,48,.05); transition:border-color .14s, box-shadow .14s, transform .14s; }
+.gal-item:hover { border-color:var(--line-2); box-shadow:0 4px 16px rgba(15,38,48,.1); transform:translateY(-1px); }
+
+/* Story type on a tile: the raindrop on its own. Judy, 19 August: bigger, and
+   no white circle behind it. The chip was there to hold the drop off a photo;
+   the drop's own white outline plus a shadow does that job without adding a
+   second shape, and the room the chip was spending goes to the glyph. */
+.gal-drop { position:absolute; top:6px; left:6px; z-index:2; display:flex;
+  filter:drop-shadow(0 1px 3px rgba(15,38,48,.5)); }
+.gal-drop .dropmark { width:30px; height:30px; }
+
+.gal-overlay { padding:22px 9px 8px; gap:2px; }
+.gal-name { font-size:var(--fs-micro); font-weight:700; }
+.gal-hood { font-size: var(--fs-micro); }
+
+/* Audio (and empty) tiles carry the type colour instead of a fixed brand tint */
+.gal-aud .gal-aud-ico { background:var(--page); color:var(--tc); gap:7px; }
+.gal-aud .gal-aud-lbl { color:var(--tc); }
+.gal-play { background:rgba(15,38,48,.55); }
+
+/* ══════════════════════════════════════════════════════════════
+   v5 — full neighborhood on cards, encouraging empty state,
+   and a reopen affordance for the side panel on desktop.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Card head: raindrop + (name stacked over the full neighborhood) */
+.scard-head { align-items:flex-start; }
+.scard-idwrap { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
+/* DUPLICATED: this selector is also defined at lines 790, 902. Later definitions win per-property. These were left unmerged because a modifier or media query between them depends on the source order. */
+.scard-hood { margin-left:0; align-self:flex-start; max-width:100%; text-align:left;
+  font-size: 12.5px; font-weight:600; letter-spacing:0; text-transform:none; line-height:1.3;
+  color:var(--faint); white-space:normal; padding:1px 0; }
+.scard-hood:hover {
+  /* merged from 2 rules, 3 properties */
+  color: var(--accent2);
+  background: none;
+  text-decoration: underline;
+}
+
+/* Empty feed: an invitation to be the first in an area */
+.feed-empty { padding:32px 22px; text-align:center; display:flex; flex-direction:column;
+  align-items:center; gap:10px; }
+.fe-drop { opacity:.65; line-height:0; margin-bottom:2px; }
+.fe-title { font-size:var(--fs-lead); font-weight:800; color:var(--ink); }
+.fe-sub { font-size:var(--fs-body); color:var(--muted); line-height:1.5; max-width:34ch; }
+.fe-cta { margin-top:8px; background:var(--cta, linear-gradient(135deg,var(--primary),var(--accent)));
+  color:var(--cta-text,#fff); border:none; border-radius:999px; padding:11px 22px; font-family:inherit;
+  font-size:var(--fs-label); font-weight:700; cursor:pointer; box-shadow:0 6px 18px var(--cta-shadow,rgba(0,0,0,.18)); }
+.fe-cta:hover { filter:brightness(1.05); transform:translateY(-1px); }
+.fe-cta.ghost { background:none; box-shadow:none; color:var(--accent2); text-decoration:underline; padding:6px; }
+
+/* Reopen the panel on desktop: the "Stories" button is hidden while the panel
+   is open, but returns (bottom-left) whenever the panel is closed. */
+@media (min-width:768px) {
+  #side:not(.open) ~ .fab{ display:flex; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STORY PANE v3 — the story leads, the city's record supports.
+   The tags moved out of the gradient header and into the body, so
+   they need body colours instead of white-on-gradient; the media
+   now leads with a full-width first photo instead of a thumb grid
+   filed under a "Photos" heading. Appended last to supersede the
+   header-context rules above (which are duplicated twice up there).
+   ══════════════════════════════════════════════════════════════ */
+
+/* Tags, in the body: quiet chips on the page tint. The storm tag keeps the
+   accent because it IS a control (it filters the map), which is the one job
+   that colour is allowed to do in this pane. */
+/* Scoped to BOTH detail hosts: the atlas side pane (.sd-body) and the shared
+   overlay the other layouts use (.sp-body). Without the second selector the
+   tags would keep their white-on-gradient colours and vanish on white. */
+.sd-body .sp-tags, .sp-body .sp-tags { margin-top:14px; gap:6px; }
+/* Matches .scard-tag now, 18 August — Judy: the card's own CSS/design should
+   carry through when a story is open, not fork into a second treatment for
+   the same data. Same #54ac55, same hashtag text (render.js now runs these
+   through hashtag() too), same button-reset-not-pill shape. */
+.sd-body .sp-cat-badge, .sp-body .sp-cat-badge {
+  background:none; color:#54ac55; border:none;
+  padding:0; font-size:var(--fs-micro); font-weight:700; }
+.sd-body .sp-cat-badge:hover, .sp-body .sp-cat-badge:hover,
+.sd-body .sp-cat-badge:focus-visible, .sp-body .sp-cat-badge:focus-visible { background:none; color:#54ac55; text-decoration:underline; }
+/* Matches .sp-cat-badge now (18 August, same reasoning) — a calendar icon
+   does the distinguishing a filled pill used to, so the storm tag and the
+   hashtags read as one family instead of two different controls. */
+.sd-body .sp-event, .sp-body .sp-event {
+  margin-top:0; border:none; background:none; color:#54ac55;
+  padding:0; font-size:var(--fs-micro); font-weight:700;
+  display:inline-flex; align-items:center; gap:4px; }
+.sd-body .sp-event svg, .sp-body .sp-event svg { width:12px; height:12px; }
+.sd-body .sp-event:hover, .sp-body .sp-event:hover,
+.sd-body .sp-event:focus-visible, .sp-body .sp-event:focus-visible { background:none; color:#54ac55; text-decoration:underline; }
+
+/* Media as a co-lead: the first photo runs full width right under the words,
+   the rest tuck in beneath it as squares. */
+.sd-body .sp-gallery { grid-template-columns:repeat(3,1fr); gap:6px; margin:15px 0 0; }
+.sd-body .sp-photo:first-child { grid-column:1 / -1; aspect-ratio:16 / 10; }
+.sd-body .sp-video { margin:15px 0 0; }
+.sd-body .sp-audio-wrap { margin-top:15px; }
+.sd-body .sp-text {
+  /* merged from 2 rules, 2 properties */
+  color: var(--ink);
+  margin-bottom: 0;
+}
+
+/* ══ PHONE: clear the floating CTA ══
+   On a phone the "Share Your Story" button floats over the panel rather than
+   beside it, so both scrollers have to be able to scroll their last item out
+   from under it: 38px of the final story card and 24px of the last nearby-story
+   row were parked underneath, which also put their tap targets under the
+   button. 96px = the CTA's 20px offset + its height + a comfortable gap.
+   Appended after the .feed and .sd-body rules so it actually wins. */
+@media (max-width:767px) {
+  .feed{ padding-bottom:96px; }
+  .sd-body{ padding-bottom:96px; }
+}
+
+/* ══ PHONE: stop the header row overflowing ══
+   The header lays out brand + count pill + nav with no shrink, so it needed
+   417px of room. On a 360px Android that cut "Impact" in half and pushed the
+   admin lock right off the screen. Two things step aside before the nav does:
+   the admin lock was hidden here, and the count pill repeats what the
+   "Stories" button and the panel header already say.
+
+   REB-422 put the lock back: moderating on a phone is a real thing people do,
+   and hiding it left them typing /admin.html from memory. It is a 30px target
+   at the end of the nav, so what steps aside on a narrow phone is the count
+   pill, which already had to go at 479px anyway. */
+@media (max-width:767px){
+  .badge{ display:none; }
+}
+
+/* ══ Reading one story after another ══
+   The pane's top row carries "All stories" on the left and a prev / counter /
+   next stepper on the right. The stepper is deliberately quiet: it is a way to
+   keep reading, not a call to act, so it stays in muted ink and only the arrows
+   respond to hover. Ends disable rather than wrap. */
+.sd-nav {
+  flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--page); border-bottom:1px solid var(--line); padding-right:9px;
+}
+.sd-nav .sd-back { border-bottom:0; }
+.sd-steps { display:flex; align-items:center; gap:2px; flex:none; }
+.sd-count {
+  font-size:var(--fs-micro); font-weight:700; color:var(--faint);
+  font-variant-numeric:tabular-nums; min-width:4.5em; text-align:center;
+}
+.sd-step {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; padding:0; border:0; border-radius:8px;
+  background:none; color:var(--accent2); cursor:pointer; transition:background .15s, color .15s;
+}
+.sd-step:hover:not(:disabled) { background:var(--accent-l); }
+.sd-step:disabled { color:var(--line-2); cursor:default; }
+/* On a phone these arrows are the main way through the stories, and a 30px
+   target is under the 44px guideline, so they grow rather than stay tidy. */
+@media (max-width:767px) {
+  .sd-step{ width:42px; height:42px; }
+  .sd-step svg{ width:19px; height:19px; }
+  .sd-nav .sd-back{ padding-right:8px; }
+}
+
+/* ══ "See where this is on the map" ══
+   Phone only. On a desktop the map never left the screen, so this button would
+   be an instruction to do nothing; below 768px the panel covers the map and a
+   story arrives with no sense of place. Quiet outline, not a second primary:
+   the gradient pill on the map is still the one thing being asked for. */
+.sd-locate { display:none; }
+@media (max-width:767px){
+  .sd-locate{
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    width:100%; margin:0 0 16px; padding:11px 14px;
+    border:1.5px solid var(--line-2); border-radius:11px; background:var(--surface);
+    font-family:inherit; font-size:var(--fs-label); font-weight:700; color:var(--accent2);
+    cursor:pointer;
+  }
+  .sd-locate:active{ background:var(--accent-l); }
+  .sd-locate svg{ width:15px; height:15px; flex:none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REB-430 / REB-431 — the modal set
+   About and Impact are the two doors in the header; "How this map
+   works" and "What the city's record shows" hang off them, because
+   four header buttons plus the lock does not fit a phone.
+   ══════════════════════════════════════════════════════════════ */
+
+/* The door from one modal to the next. Reads as a route, not a button being
+   asked for: quiet surface, the arrow doing the work on the right. */
+.ab-more, .imp-more {
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
+  margin-top: 20px; padding: 15px 16px;
+  background: var(--accent-l); border: 1.5px solid var(--line-2); border-radius: 13px;
+  font-family: inherit; color: var(--ink); cursor: pointer;
+  transition: border-color .14s, transform .14s;
+}
+.ab-more:hover, .imp-more:hover { border-color: var(--accent2); transform: translateY(-1px); }
+.ab-more svg { width: 19px; height: 19px; flex: none; color: var(--accent2); }
+.ab-more span, .imp-more-t {
+  display: block; font-size: var(--fs-micro); color: var(--muted); line-height: 1.45;
+}
+.ab-more span b, .imp-more-t b {
+  display: block; font-size: var(--fs-label); font-weight: 800; color: var(--ink); margin-bottom: 2px;
+}
+.ab-more-x { flex: none; margin-left: auto; font-size: var(--fs-lead); color: var(--accent2); }
+/* The Impact doorway leads with the number, because the number is the reason
+   to go through it. */
+.imp-more-n {
+  flex: none; font-size: 26px; font-weight: 800; color: var(--accent2);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+
+/* "Where each number comes from" — one row per source, so a practitioner can
+   scan for the dataset they already know rather than read a paragraph. */
+.src-list { display: grid; gap: 2px; margin-top: 4px; }
+.src-row { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.src-row:last-child { border-bottom: 0; }
+.src-h { font-size: var(--fs-label); font-weight: 800; color: var(--ink); margin-bottom: 3px; }
+.src-p { font-size: var(--fs-micro); color: var(--muted); line-height: 1.5; }
+
+/* ── Data dictionary (REB-453) ────────────────────────────────────────────
+   One block per dataset, each a definition list. Deliberately plainer than the
+   rest of the modals: this is reference material for someone checking a figure,
+   so it is laid out to be scanned down the left edge and read across, not to be
+   read as prose. No accent colour anywhere in it — nothing here is a control. */
+.dict-set {
+  margin-top: 18px; padding: 15px 16px;
+  /* Border only, no fill. `--card` does not exist in this stylesheet and a
+     made-up token is how `--line` itself once collapsed every border in the
+     file to none — see the note in :root. The sheet is white; the outline is
+     all the separation these blocks need. */
+  border: 1px solid var(--line); border-radius: 12px;
+}
+.dict-set-h {
+  font-size: var(--fs-lead); font-weight: 800; color: var(--ink);
+  margin-bottom: 10px; line-height: 1.3;
+}
+/* The layer's own colour, so the card and the mark on the map point at each
+   other. `align-self` rather than a baseline nudge: the heading wraps to two
+   lines on a phone and the chip has to stay on the first one. */
+.meth-sw {
+  display: inline-block; width: 12px; height: 12px; margin-right: 8px;
+  border-radius: 3px; border: 1px solid var(--line-2, var(--line));
+  vertical-align: baseline;
+}
+/* The layers one card speaks for, each with its own colour. The 311 card is
+   four layers in four colours and a single chip beside a four-name title said
+   they were one thing (Judy, 19 August). */
+.meth-keys {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  margin: 0 0 12px;
+}
+.meth-key {
+  display: inline-flex; align-items: center;
+  font-size: var(--fs-micro); font-weight: 700; color: var(--ink);
+}
+.meth-what {
+  font-size: var(--fs-body); color: var(--ink); line-height: 1.55;
+  margin: 0 0 12px;
+}
+.dict-dl { margin: 0; display: grid; gap: 0; }
+/* Two columns on a laptop, stacked on a phone. The key column is fixed rather
+   than content-sized so every dataset's values line up with each other down the
+   panel — the whole value of a dictionary is comparing one row against the
+   next. */
+.dict-row {
+  display: grid; grid-template-columns: 150px 1fr; gap: 4px 14px;
+  padding: 8px 0; border-top: 1px solid var(--line); align-items: baseline;
+}
+.dict-row:first-child { border-top: 0; padding-top: 0; }
+.dict-k {
+  font-size: var(--fs-micro); font-weight: 800; color: var(--faint);
+  line-height: 1.4; margin: 0;
+}
+.dict-v {
+  font-size: var(--fs-micro); color: var(--ink); line-height: 1.55; margin: 0;
+  /* Endpoints and SoQL filters are long unbroken strings with no spaces. Without
+     this one line they push the panel wider than the window and the whole sheet
+     scrolls sideways. */
+  overflow-wrap: anywhere;
+}
+.dict-v a { color: var(--accent2); }
+.dict-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--fs-micro); color: var(--ink);
+  background: var(--accent-l); border-radius: 5px; padding: 3px 6px;
+  /* A filter must be copyable exactly as sent, so the quoting and spacing that
+     Socrata needs survives a selection. */
+  white-space: pre-wrap;
+  /* Grid items are blockified, so `display: inline-block` here does nothing and
+     a four-by-four id was painting a full-width tinted bar. This shrink-wraps
+     the tint to the value in both the short and the wrapped case. */
+  justify-self: start; max-width: 100%;
+}
+
+/* Every asset type in the DEP layer, counted from the overlay. Count first
+   because the reason this table exists is the size of the tail: the three named
+   families are obvious at the top and the 22 types nobody expected are the
+   point. Tabular figures so the column reads as a column. */
+.dict-types {
+  width: 100%; border-collapse: collapse; margin-top: 8px;
+  table-layout: fixed; font-size: var(--fs-micro);
+}
+.dict-types th, .dict-types td {
+  text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line);
+  vertical-align: top; line-height: 1.4; overflow-wrap: anywhere;
+}
+.dict-types th { color: var(--faint); font-weight: 800; }
+/* The width has to be declared on the FIRST ROW's cell, which is the `th`, not
+   only on the `td` that wears `.dict-types-n`. `table-layout: fixed` takes its
+   column widths from row one and ignores every row after it, so styling the
+   body cell alone left the header to split the table 50/50 and the count
+   floated in the middle of a half-empty column. */
+.dict-types th:first-child, .dict-types td:first-child {
+  width: 84px; text-align: right;
+}
+.dict-types-n {
+  font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink);
+}
+.dict-types tfoot td { border-bottom: 0; border-top: 2px solid var(--line); font-weight: 800; }
+
+@media (max-width: 560px) {
+  .dict-row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* Provenance line under the city record: what was counted, over what window,
+   and when it was last rebuilt. */
+.ab-src {
+  margin-top: 18px; padding-top: 13px; border-top: 1px solid var(--line);
+  font-size: var(--fs-micro); color: var(--faint); line-height: 1.5;
+}
+
+
+/* The bar row was laid out for the story-type counts, which are single digits
+   at this scale. The city-record distribution puts 15,343 in the same column
+   and it was being clipped, so the value column now sizes to its content and
+   the track gives up the space instead. Tabular figures so the five rows line
+   up as a column of numbers rather than drifting. */
+.imp-bar { grid-template-columns: 150px 1fr max-content; }
+.imp-bar-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px){ .imp-bar { grid-template-columns: 92px 1fr max-content; } }
+
+/* REB-448 reserved this column so a row would not change HEIGHT when its layer
+   was switched on: the badge appeared on toggle, took 58px from the row, and
+   re-wrapped the label from one line to two under the cursor.
+
+   REB-476 retires that. The label is `white-space: nowrap` now, so it cannot
+   wrap to a second line whatever the badge does — the reflow this was guarding
+   against is no longer reachable, and the reservation was pure cost: 51px of a
+   248px panel held empty on every row that is switched off, which is most of
+   them, while three labels truncated beside the gap. Judy: "the fill text does
+   not appear when there's clearly room in the layers panel." She was right and
+   this was the room.
+
+   What toggling changes now is where a long label truncates, not how tall its
+   row is. That is a far smaller thing to trade, and it only happens on the row
+   being clicked. */
+.l-item .l-badge[hidden] { display: none; }
+/* Fixed, not min-width. A flexing badge is 47px empty and 58px holding
+   "17,098", and that 11px came out of the label column — enough to wrap
+   "Street flooding (311)" onto a second line at the moment it was clicked.
+   A constant width means the label column is the same in every row and every
+   state, so height depends only on the label. 4.6em fits "60,794".
+
+   REB-476: the badge is a rung smaller than the label now instead of the same
+   size. 4.6em of a smaller font is a narrower column, which is where the room
+   for a one-line Title Case label came from — the reservation is load-bearing
+   and could not simply be dropped, so it was shrunk instead. It still fits
+   "60,794", which is the widest number this panel can show. */
+.l-badge { flex: 0 0 4.6em; text-align: right; font-size: 11px; }
+
+/* REB-484. The two organisation bios, set apart from the narrative above
+   them: the story is about the rain and the people in it, and these are the
+   footnote saying who "we" are. Same type as the body, a rule to separate. */
+.ab-tail { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.ab-tail .ab-sec-t:first-child { margin-top: 0; }
+
+/* REB-486. The About panel takes the Rainproof gradient on its title and the
+   brand green on its section titles. Judy's call, and scoped to #aboutBody on
+   purpose: `.ab-h` and `.ab-sec-t` are shared with the data dictionary, the
+   city record and the impact panel, and those are reference surfaces where a
+   gradient headline would read as decoration. Say the word to widen it.
+
+   WIDENED 19 August for the findings panel (REB-522), which is a narrative
+   surface rather than a reference one — it is read, not looked things up in.
+   Widening the selector rather than writing a second rule is the whole point:
+   the two panels sit one nav item apart and a copy would drift.
+
+   `background-clip: text` needs a transparent fill to show through, so the
+   `color` under it is the FALLBACK a browser without support paints — the
+   brand teal, not transparent, or the title would vanish rather than degrade.
+
+   CONTRAST, measured on white and recorded rather than left to be discovered:
+   the gradient runs 2.43:1 (#2EB4D7) to 2.83:1 (#56AC52). At --fs-display,
+   800 weight, this is large text, where 3:1 is the bar — so it lands just
+   under it across the whole sweep. It is a title carrying no information the
+   copy beneath does not repeat, which is why it is a defensible place to
+   spend that. Do not copy the technique onto small text. */
+#aboutBody .ab-h,
+#dictBody .ab-h,
+#findingsBody .ab-h {
+  color: var(--primary);
+  background: linear-gradient(115deg, var(--primary) 0%, var(--accent) 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* Judy's exact value. 2.83:1 on white, where 12.5px uppercase wants 4.5 — this
+   is the one to revisit if the cohort says the headings are hard to read, and
+   #3D8B3F is the same green at 4.23:1 if so. */
+#aboutBody .ab-sec-t,
+#dictBody .ab-sec-t,
+#findingsBody .ab-sec-t { color: #54ac55; }
+
+/* REB-488 put the green on these card headings. Judy took it back off on 19
+   August: the card names have to match the layer names in Map Layers, which
+   are default ink, and green on both the group heading and the card name left
+   nothing telling the two levels apart. The group headings above keep it. */
+#dictBody .dict-set-h { color: var(--ink); }
+
+/* REB-483, and RESTORED in REB-485 after being deleted by accident. `.ab-more`
+   is an <a> as well as a <button>, and the anchor underline ran through the
+   whole resources card, label and hint together — it is a card, not a link in
+   a sentence. It went out with the old `.ab-credits` block because it happened
+   to sit between that block's comment and its last rule, which is exactly the
+   near-miss REB-451 recorded: removing CSS by matching a range takes whatever
+   is inside the range with it. */
+a.ab-more, a.ab-more:hover { text-decoration: none; }
+
+/* REB-485. Credits are body copy now, not a footer. They used to be
+   `--fs-micro` in `--muted` behind a hairline, which reads as a legal notice —
+   and this is the part naming the people who did the work. They take
+   `.ab-sec-t` + `.ab-p` like every other section; only the links are styled,
+   so six partner names read as a sentence rather than a row of buttons. */
+.ab-p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.ab-p a:hover { color: var(--primary-d, var(--ink)); }
+
+/* ── The colour scale, inline under its layer ─────────────────────────────
+   Judy, 10 August: the key moved into the Map Layers panel. Two floating
+   panels explaining one list became one, and everything the standalone key
+   needed — positioning against the panel, a height cap, a scroll region that
+   could not swallow map clicks, a fold control — stopped being a question.
+   The map controls no longer step aside for anything, which is why the
+   `body:has(#mapKey…)` rules went with it. */
+
+/* Full width so it wraps onto its own line inside the flex row, the way the
+   old caption did. Indented past the swatch so it reads as belonging to the
+   layer above it rather than as a new item. */
+.l-scale { width: 100%; padding-left: 18px; margin: 5px 0 2px; }
+.l-scale[hidden] { display: none; }
+
+/* Every configured break point stays a visible colour. Equal flex, so the
+   strip reads as a scale rather than as five things of different importance. */
+.l-scale-strip { display: flex; height: 9px; border-radius: 3px; overflow: hidden; }
+.l-seg { flex: 1 1 0; }
+
+/* The two ends named, and nothing between: the exact counts are a hover away
+   on the blocks themselves. One row per stop would be fifteen rows in a 248px
+   panel with three layers on. */
+.l-scale-ends {
+  display: flex; justify-content: space-between; gap: 8px;
+  margin-top: 3px;
+  font-size: var(--fs-micro); color: var(--muted); line-height: 1.3;
+}
+.l-scale-ends span:last-child { text-align: right; }
+
+/* The caveats, once for the whole panel rather than once per layer. */
+/* ── Grouped layer panel (17 August, Judy's layout D1) ──────────────────────
+   Four kinds of thing were in one flat list: modelled projections, resident
+   reports, instrument readings and political boundaries, all looking equally
+   authoritative. These headers are the fix, and they are also what lets the four
+   311 rows drop their "(311)" suffix — said once here instead of four times.
+
+   Deliberately quiet: uppercase micro type in --muted, a hairline above, no
+   background. A header that competed with the rows would just be a fifth thing
+   to read in a panel Judy already called "all over the place". */
+/* Judy, 17 August: the same green as the About/Data Dictionary section
+   headings (`#aboutBody .ab-sec-t`, `#dictBody .ab-sec-t`), so the four group
+   headers read as sections the same way there. Same literal, no shared token
+   — matches how the other two uses are written. */
+.l-grp {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: #54ac55;
+  padding: 10px 2px 4px; margin-top: 4px;
+  border-top: 1px solid var(--line);
+}
+/* The first header carries no rule — there is nothing above it to divide from,
+   and a line hugging the panel's own top edge reads as a rendering fault. */
+.l-grp:first-child { border-top: 0; margin-top: 0; padding-top: 2px; }
+.l-grp-n {
+  color: #54ac55;
+  font-weight: 400; letter-spacing: 0; text-transform: none;
+  font-size: var(--fs-micro);
+}
+
+/* Boundary layers as pills rather than rows. A district outline is wayfinding,
+   not a hazard, and a full row with a colour swatch makes it look like a fifth
+   kind of flooding. Pills also take a third boundary later without lengthening
+   the list. No swatch on purpose: the colour of a hairline at 11px tells a
+   reader nothing, and the map itself is the legend for it. */
+.l-pills { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 2px 4px; }
+.l-pill {
+  font: inherit; font-size: var(--fs-micro); line-height: 1.3;
+  padding: 4px 10px; border-radius: 20px; cursor: pointer;
+  /* Border only, no fill, matching the pattern at line ~2276 — and note that
+     `--card` does NOT exist in this stylesheet, which that comment already warns
+     about and which this rule got wrong once. */
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  transition: background .15s, color .15s, border-color .15s;
+}
+/* `--pill-c` is set inline per pill from the layer's own config colour
+   (council's pink, community's purple), so hover and selected match the
+   boundary each pill turns on rather than one shared brand colour. Falls
+   back to `--story-blue` for a pill with no colour set. */
+.l-pill:hover {
+  background: color-mix(in srgb, var(--pill-c, var(--story-blue)) 14%, var(--bg));
+  border-color: color-mix(in srgb, var(--pill-c, var(--story-blue)) 45%, var(--line));
+  color: var(--ink);
+}
+/* Darkened 18% toward black before it carries white text — #C85A82 (council's
+   pink) is only 4.01:1 as drawn on the map, under the 4.5 small bold text
+   needs. The mixed shade stays visibly the same pink/purple, just legible. */
+.l-pill.on {
+  background: color-mix(in srgb, var(--pill-c, var(--story-blue)) 82%, black);
+  border-color: color-mix(in srgb, var(--pill-c, var(--story-blue)) 82%, black);
+  color: #fff; font-weight: 650;
+}
+.l-pill:focus-visible { outline: 2px solid var(--pill-c, var(--story-blue)); outline-offset: 2px; }
+
+.l-notes { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
+.l-notes[hidden] { display: none; }
+.l-note { font-size: var(--fs-micro); color: var(--muted); line-height: 1.4; }
+.l-note + .l-note { margin-top: 5px; }
+
+/* The panel scrolls once it outgrows the window. Absorbing the key gave it
+   real height — four stepped layers on a 945px window came to 920px of panel
+   and ran off the bottom of the screen, taking the story-type legend with it.
+
+   A list that scrolls is the ordinary answer, and it is available here for the
+   reason the floating key could never use it: `.layers` already takes pointer
+   events, so there is no map click to protect. `top: 68px` under the header,
+   12px of air at the bottom. */
+/* The 200px is the bottom-right corner the map's own controls live in —
+   geolocate, then zoom, then attribution. Letting the panel run to the bottom
+   of the window buried both control groups completely: `elementFromPoint` at
+   their centres returned `.layers`, so zoom and geolocate were unclickable
+   with four layers on. That is the REB-425 bug from the other direction — it
+   was the key covering them then, the panel now — and the reserve is the fix
+   that does not depend on anything moving out of the way. */
+.l-body {
+  /* Was `100vh - 68px - 200px`: a guessed header and a static viewport unit.
+     --hdr-h is the measured one, dvh tracks the browser toolbar, and 200px is
+     the bottom chrome the panel must not run into. At 320x568 the last
+     boundary pill was off the screen with nothing able to scroll to it. */
+  max-height: calc(100dvh - var(--hdr-h, 58px) - 200px);
+  overflow-y: auto;
+}
+
+/* A CATEGORICAL layer key: one row per category, each with its own dot and its
+   own count. Deliberately NOT `.l-scale-strip`, which joins its segments into a
+   continuous bar. That bar says "one measure, more of it to the right", which
+   is right for the 311 density ramps and wrong for DEP, where dark green and
+   light green are built and not-built-yet. Judy, 14 August: the strip read as a
+   bar chart. Separated rows and a round dot cannot be mistaken for a scale,
+   because they match the shape actually drawn on the map. */
+.l-cats { display: flex; flex-direction: column; gap: 3px; }
+.l-cat { display: flex; align-items: center; gap: 6px; }
+.l-cat-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.9);
+}
+.l-cat-label { font-size: var(--fs-micro); color: var(--muted); line-height: 1.3; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ONE-PAGE SUBMISSION FORM — 19 August 2026
+   The form was three steps. Everything below draws the single-page,
+   two-column version: sections, the one media rectangle, and the byline
+   control that replaced four radio cards.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Wider than the 720px the stepped form used, because two columns need it.
+   This is the shared engine value, so it moves for every tenant on this
+   build — the previous comment above still explains why 720 was picked for
+   one column, and that reasoning is what this supersedes. */
+.form-sheet { max-width: 920px; }
+@media (max-width: 959px) { .form-sheet { max-width: none; } }
+
+/* #fBody carries its own 16px 20px padding (core.css). The sections below set
+   their own, and the column divider and the band rules are meant to run edge to
+   edge — with both, the gutters doubled and every rule stopped 20px short. */
+.form-sheet .sheet-body { padding: 0; }
+
+.form-cols { display: grid; grid-template-columns: 1fr 1fr; }
+.form-col { padding: 20px 22px; min-width: 0; }
+.form-col-l { border-right: 1px solid var(--border); }
+/* One column below 900px. The columns are a desktop convenience; stacked,
+   the order is still name, email, location, story, tags. */
+@media (max-width: 899px) {
+  .form-cols { grid-template-columns: 1fr; }
+  .form-col-l { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+
+/* A drop target wants to be wide, and media in the right column left the
+   left one ~250px shorter. Its own band under both. */
+#errForm { margin: 16px 20px 0; }
+#errForm:not(.show) { margin: 0; }
+.form-band { padding: 20px 22px; border-top: 1px solid var(--border); }
+.form-foot { padding: 18px 22px calc(20px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border); background: var(--bg); }
+
+.form-sec { margin-bottom: 22px; }
+.form-sec:last-child { margin-bottom: 0; }
+.grp {
+  font-size: var(--fs-micro); letter-spacing: 0.11em; text-transform: uppercase;
+  font-weight: 600; color: var(--faint); margin: 0 0 10px;
+  padding-bottom: 7px; border-bottom: 1px solid var(--border);
+}
+.grp-opt { text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* Labels wrap their input now, so the label text and the box are one target. */
+.fw { display: block; }
+.fw .flbl { display: block; margin-bottom: 5px; }
+
+/* The story box takes the column, and the column is already measured. The
+   72ch cap belonged to a 720px single-column sheet. */
+.form-sheet textarea.field { max-width: none; }
+
+/* ── the one media rectangle ─────────────────────────────────────────── */
+.upload-z.one { display: block; text-align: center; padding: 20px 16px; cursor: pointer; }
+.upload-z.one .uz-ico { display: block; margin: 0 auto 8px; }
+.upload-z.one .uz-lbl { display: block; }
+.upload-z.one .uz-sub { display: block; margin-bottom: 12px; }
+.uz-acts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.uz-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--white); color: var(--text);
+  font-size: var(--fs-micro); font-weight: 650; cursor: pointer;
+}
+.uz-btn:hover { border-color: var(--primary); }
+.uz-btn.rec { color: var(--danger); }
+/* Recording is a state someone has to be able to see from across the room:
+   the button is the timer while it runs. */
+.uz-btn.rec.on { background: var(--danger); border-color: var(--danger); color: var(--white); }
+/* What the picker will and will not take, stated before anybody hits a limit.
+   Heavier than .uz-fine below it: this is a rule, that is a reassurance. */
+.uz-rules {
+  font-size: var(--fs-micro); font-weight: 700; color: var(--ink);
+  line-height: 1.45; margin: 12px auto 0; max-width: 62ch;
+}
+.uz-rules + .uz-fine { margin-top: 6px; }
+
+.uz-fine {
+  font-size: var(--fs-micro); color: var(--muted); line-height: 1.45;
+  margin: 12px auto 0; max-width: 62ch;
+}
+.upload-z.one .prevs { justify-content: center; margin-top: 12px; }
+.p-file span { font-size: 9px; }
+
+/* ── the byline ──────────────────────────────────────────────────────── */
+.sign-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.sign-lbl { font-size: var(--fs-label); font-weight: 700; flex: none; }
+.seg {
+  display: inline-flex; background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap;
+}
+.seg button {
+  padding: 7px 14px; border-radius: 7px; border: 0; background: transparent;
+  font-size: var(--fs-label); font-weight: 650; color: var(--muted);
+  white-space: nowrap; cursor: pointer;
+}
+.seg button:hover { color: var(--text); background: var(--bg); }
+/* The story blue, same as the pin and the type cards. 7.92:1 with white. */
+.seg button[aria-pressed="true"] { background: var(--story-blue); color: var(--white); }
+.sign-note { font-size: var(--fs-micro); color: var(--muted); flex: 1; min-width: 170px; }
+.sign-note b { color: var(--story-blue); font-weight: 700; }
+.sign-hint { font-size: var(--fs-micro); color: var(--muted); margin: 0 0 12px; }
+
+/* ── the privacy notice, collapsible ─────────────────────────────────── */
+.pn-more-wrap { border: 1.5px solid var(--border); border-radius: 10px; background: var(--white); margin-bottom: 10px; }
+.pn-sum {
+  list-style: none; cursor: pointer; padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px; font-size: var(--fs-label); font-weight: 700;
+}
+.pn-sum::-webkit-details-marker { display: none; }
+.pn-sum:hover { background: var(--bg); }
+.pn-ico { flex: none; color: var(--story-blue); display: flex; }
+.pn-sum-t { flex: 1; min-width: 0; }
+.pn-sum-t small { display: block; font-size: var(--fs-micro); font-weight: 500; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.pn-caret { flex: none; color: var(--muted); display: flex; transition: transform 0.18s; }
+.pn-more-wrap[open] .pn-caret { transform: rotate(180deg); }
+.pn-in { padding: 2px 14px 14px; border-top: 1px solid var(--border); }
+.pn-in .pn-list { margin-top: 12px; }
+/* Two columns of sentences on a wide sheet; one when it stacks. */
+@media (min-width: 900px) { .pn-in .pn-list { column-count: 2; column-gap: 22px; } }
+.pn-in .pn-list li { break-inside: avoid; }
+
+/* The consent tick is NOT inside the collapse, and must not be moved into it.
+   REB-12: a resident has to be able to agree without hunting for the box. */
+.pn-agree { margin-top: 0; }
+
+@media (prefers-reduced-motion: reduce) { .pn-caret { transition: none; } }
+
+/* Tags are hashtags in the form now, wearing the story card's own #54ac55, so
+   what you pick looks like what it becomes (`.scard-tag`). Judy's literal ask,
+   19 August. The 2.83:1 on white is the number already on record for this hex
+   against the section headings and the card tags; she has kept it knowingly
+   each time, so it is noted, not re-argued.
+
+   Selection cannot be carried by colour here — every tag is already green — so
+   it is carried by the fill and the outline, and the weight steps up. */
+.form-sheet .fcat.tag {
+  border-radius: 7px; border: 1px solid transparent;
+  background: var(--bg); color: #54ac55; font-weight: 600;
+}
+.form-sheet .fcat.tag:hover { background: #E4F1E4; border-color: #BBDCBB; }
+.form-sheet .fcat.tag.sel {
+  background: #EEF7EE; border-color: #54ac55; font-weight: 750;
+  box-shadow: inset 0 0 0 1px #54ac55;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   PHONE: TAP TARGETS
+   Apple asks 44px, Android 48dp. .sd-step was already grown for this; these
+   four were not brought along. Hit area is extended with a pseudo-element
+   rather than padding so nothing reflows and the header does not get taller.
+   ════════════════════════════════════════════════════════════════════════ */
+/* The 16px pin at line ~1142 is overridden for .field by the design-system
+   rule below it (`.field { font-size: var(--fs-body) }`, 14.5px), so on a
+   phone every form input was still under the zoom floor. Same declaration,
+   restated after it. */
+@media (max-width: 767px) {
+  .field, .cx-input, input[type="text"], input[type="email"],
+  input[type="tel"], input[type="search"], textarea, select { font-size: 16px; }
+}
+
+@media (max-width: 767px) {
+  /* The ✕ overflowed its 26px box (scrollWidth 34). A phone has the room. */
+  .close-side { width: 34px; height: 34px; line-height: 1; }
+  .close-side, .hnav { position: relative; }
+  .close-side::after { content: ""; position: absolute; inset: -10px; }
+  /* Vertical only: the nav items sit shoulder to shoulder and overlapping
+     hit areas would make the wrong one fire. */
+  .hnav::after { content: ""; position: absolute; inset: -7px -1px; }
+  /* Real padding here, the media band has the room for it. */
+  .uz-btn { padding: 12px 15px; min-height: 44px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PHONE: MAP FIRST, ONE BAR (direction B)
+   The pane was a 90vw left drawer that covered the map on load. The map is
+   the landing state now; the bar carries the two actions the pane's header
+   carried, the count pill is the door to the list, and a story arrives as a
+   card over the bottom third instead of a panel over everything.
+   Everything here is phone-only — desktop keeps the pane beside the map.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.map-bar { display: none; }
+.story-card { display: none; }
+
+@media (max-width: 767px) {
+
+  /* ── the bar ──────────────────────────────────────────────────────── */
+  .map-bar {
+    position: fixed; z-index: 18;
+    left: 9px; right: 9px;
+    bottom: calc(12px + var(--ftr-safe) + var(--vv-gap, 0px));
+    display: flex; align-items: center; gap: 9px;
+    transition: bottom .18s ease-out;
+    padding: 9px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 6px 26px rgba(15, 38, 48, .22);
+  }
+  .mb-search {
+    position: relative; flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 8px;
+    height: 48px; padding: 0 12px;
+    border: 1.5px solid var(--line); border-radius: 11px; background: var(--bg);
+    transition: border-color .15s, background .15s;
+  }
+  .mb-search:focus-within { border-color: var(--story-blue); background: var(--surface); }
+  .mb-ico { display: flex; flex: none; color: var(--muted); line-height: 0; }
+  .mb-search input {
+    flex: 1; min-width: 0; height: 100%;
+    background: none; border: none; outline: none;
+    font-family: inherit; font-size: 16px; color: var(--ink);
+  }
+  .mb-search input::placeholder { color: var(--muted); }
+
+  /* No room below a bar that is already sitting on the keyboard. */
+  /* Clears the BAR's outer edge, not the input's: 9px of bar padding plus a
+     9px gap, so the list reads as floating above the bar rather than growing
+     out of its top corners. */
+  .mb-sugg { top: auto; bottom: calc(100% + 18px); max-height: 46vh; }
+
+  .mb-share {
+    flex: none; width: 50px; height: 50px; border-radius: 50%; border: none;
+    background: var(--cta, linear-gradient(135deg, var(--primary), var(--accent)));
+    color: var(--cta-text, #fff);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 5px 15px var(--cta-shadow, rgba(46, 180, 215, .4));
+    cursor: pointer;
+  }
+  .mb-share svg { width: 21px; height: 21px; }
+
+  /* ── the count pill ───────────────────────────────────────────────── */
+  /* .fab is the door to the list now, not a corner affordance, so it centres
+     over the bar. 68px is the bar (9 + 50 + 9), 10px is the gap. */
+  /* Judy, 19 August: half again as big. It is the only door to the story
+     list on a phone, and at 36px it read as a status chip rather than a
+     control. 36 -> 54px tall, everything inside scaled with it. */
+  .fab {
+    /* `translate`, not `transform`: they are separate properties, so the hover
+       lift composes with the centring instead of wiping it out. */
+    left: 50%; translate: -50% 0;
+    bottom: calc(12px + var(--ftr-safe) + var(--vv-gap, 0px) + 68px + 10px);
+    border-radius: 999px; padding: 13px 22px; gap: 10px;
+    font-size: 1.06rem;
+  }
+  .fab svg { width: 21px; height: 21px; }
+  .fab-n { width: 27px; height: 27px; font-size: .95rem; }
+
+  /* The list is a destination now, so it takes the screen rather than
+     leaving a 10vw strip of map nobody can use. */
+  .side { width: 100%; }
+
+  /* Mapbox's own controls sit bottom-right by default, which is where the bar
+     is now: the zoom-OUT button was half under it. Lift them by the bar plus a
+     gap, and let them ride the keyboard the same way the bar does. */
+  .mapboxgl-ctrl-bottom-right,
+  /* REB-533. Only the right-hand container was lifted when this was written, so
+     the logo and the attribution stayed under the bar. Same lift, both sides. */
+  .mapboxgl-ctrl-bottom-left {
+    bottom: calc(12px + var(--ftr-safe) + var(--vv-gap, 0px) + 70px) !important;
+  }
+
+  /* Both are the map's chrome; the pane and the card each replace them. */
+  body:has(#side.open) .map-bar,
+  body:has(#storyCard.open) .map-bar,
+  body:has(#storyCard.open) .fab { display: none; }
+
+  /* ── the story card ───────────────────────────────────────────────── */
+  .story-card {
+    position: fixed; z-index: 19;
+    left: 0; right: 0; bottom: var(--tool-gap, 0px);
+    display: flex; flex-direction: column;
+    padding-bottom: calc(10px + var(--ftr-safe));
+    background: var(--surface);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -6px 34px rgba(15, 38, 48, .2);
+    transform: translateY(101%);
+    transition: transform .3s cubic-bezier(.2, .7, .3, 1);
+  }
+  .story-card.open { transform: translateY(0); }
+
+  .sc-top { display: flex; align-items: flex-start; gap: 9px; padding: 14px 14px 0; }
+  .sc-drop { flex: none; line-height: 0; }
+  .sc-drop svg { width: 27px; height: 27px; }
+  .sc-id { flex: 1; min-width: 0; }
+  .sc-who { font-size: var(--fs-lead); font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
+  /* One line: a two-line neighbourhood pushed the stepper out of alignment
+     with the name it sits beside. */
+  .sc-hood {
+    font-size: var(--fs-micro); color: var(--muted); line-height: 1.35;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sc-steps { display: flex; align-items: center; gap: 2px; flex: none; }
+  .sc-x {
+    position: relative; flex: none;
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--surface);
+    color: var(--muted); font-size: .8rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sc-x::after { content: ""; position: absolute; inset: -8px; }
+
+  .sc-body { padding: 11px 14px 0; display: flex; gap: 11px; align-items: flex-start; }
+  .sc-thumb {
+    flex: none; width: 104px; height: 78px; border-radius: 10px;
+    object-fit: cover; background: var(--bg); display: block;
+  }
+  /* Two-photo stories and audio-only stories both land here, so the text
+     takes the whole width when there is nothing to show beside it. */
+  .sc-text {
+    flex: 1; min-width: 0;
+    font-size: var(--fs-micro); line-height: 1.5; color: var(--ink);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+  }
+  .sc-tags:not(:empty) { padding: 10px 14px 0; }
+  .sc-tags .scard-tags { margin: 0; }
+
+  .sc-more {
+    margin: 12px 14px 0;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 44px; padding: 11px 14px;
+    border: 1.5px solid var(--line-2); border-radius: 11px; background: var(--surface);
+    font-family: inherit; font-size: var(--fs-label); font-weight: 700; color: var(--accent2);
+    cursor: pointer;
+  }
+  .sc-more:active { background: var(--accent-l); }
+
+  /* The full detail is reached from the card, so the phone-only "see this on
+     the map" button inside it has a job again: the card left the map up, the
+     panel does not. */
+
+  /* The form is long enough that a bottom sheet gains nothing, and a full
+     takeover gives the keyboard the whole page to push against. */
+  #formOverlay .sheet {
+    height: 100%; max-height: none; border-radius: 0;
+  }
+  /* Nothing to drag on a full-screen sheet, and it was being mistaken for the
+     way out. The ✕ in the header is the way out (js/form.js). */
+  #formOverlay .drag { display: none; }
+
+  /* The phone form is a full takeover, so the map behind it is never needed, and
+     the keyboard shrank the overlay past it leaving a band of WebGL juddering
+     beside the fields. visibility, not display, so Mapbox has nothing to resize. */
+  body:has(#formOverlay.open) #map { visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-bar, .story-card { transition: none; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   PHONE: THE HEADER IS ONE ROW
+   Judy, 19 August: About / Methodology / the padlock behind a burger, so the
+   header stops spending a second row on them. Above 768px nothing changes —
+   the burger is display:none and the nav sits inline as it always has.
+
+   The nav element itself is reused rather than duplicated, so every button
+   keeps its own wiring and there is no second copy to keep in step.
+   ════════════════════════════════════════════════════════════════════════ */
+.hdr-burger { display: none; }
+
+@media (max-width: 767px) {
+  .hdr-burger {
+    display: flex; align-items: center; justify-content: center;
+    flex: none; width: 42px; height: 42px; margin-right: -6px;
+    border: none; border-radius: 10px;
+    background: rgba(255, 255, 255, .16);
+    color: #fff; cursor: pointer;
+    transition: background .14s;
+  }
+  .hdr-burger[aria-expanded="true"] { background: rgba(255, 255, 255, .3); }
+  .hdr-burger svg { width: 22px; height: 22px; }
+
+  /* One row again: the brand takes the space it needs beside the burger
+     instead of claiming a full row and pushing the nav below it. */
+  .hdr { flex-wrap: nowrap; }
+  .hdr-brand { flex: 1 1 auto; min-width: 0; }
+
+  /* The nav becomes the menu. White panel and ink text because white-on-
+     gradient does not survive leaving the gradient; both are existing tokens. */
+  .hdr-nav {
+    display: none;
+    position: absolute; top: calc(100% - 3px); right: 10px; z-index: 40;
+    flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 186px; padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 18px 44px -14px rgba(15, 38, 48, .38), 0 2px 8px rgba(15, 38, 48, .1);
+  }
+  .hdr-nav.open { display: flex; }
+
+  .hdr-nav .hnav,
+  .hdr-nav .hnav-admin {
+    width: 100%; text-align: left;
+    padding: 13px 12px; min-height: 46px;
+    border-radius: 8px; color: var(--ink);
+    font-size: var(--fs-label); font-weight: 700;
+    /* flex-start, not the inline padlock's `center`: in a stacked menu the
+       three labels line up on their left edge or one of them reads as odd. */
+    display: flex; align-items: center; justify-content: flex-start; gap: 9px;
+  }
+  .hdr-nav .hnav:active,
+  .hdr-nav .hnav-admin:active { background: var(--accent-l); }
+  /* `display:flex` above beats the `hidden` ATTRIBUTE, which is only a UA
+     `display:none`. Impact and Findings are hidden for the UX review
+     (REB-471) and the menu was putting them back on screen. */
+  .hdr-nav .hnav[hidden], .hdr-nav .hnav-admin[hidden] { display: none; }
+  /* The padlock had no label inline because there was no room; in a menu
+     there is, and REB-422 is about moderators being able to FIND it. */
+  .hdr-nav .hnav-admin { border: 0; background: none; }
+  .hdr-nav .hnav-admin::after { content: "Admin"; }
+
+  /* The pseudo-element hit areas from the tap-target pass would overlap in a
+     stacked menu and fire the wrong item; the rows are 46px on their own. */
+  .hdr-nav .hnav::after { content: none; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   viewport-fit=cover: the fixed chrome holds itself off the notch
+   Portrait only needs the bottom, which the rules above already carry.
+   These are the landscape cases, where the Dynamic Island is on one side.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .map-bar {
+    left: calc(9px + env(safe-area-inset-left, 0px));
+    right: calc(9px + env(safe-area-inset-right, 0px));
+  }
+  .story-card, .side {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .layers { right: calc(8px + env(safe-area-inset-right, 0px)); }
+  .mapboxgl-ctrl-bottom-right { right: env(safe-area-inset-right, 0px) !important; }
+  .mapboxgl-ctrl-bottom-left { left: env(safe-area-inset-left, 0px) !important; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE HEADER CANNOT PUSH THE PAGE WIDER THAN THE SCREEN
+   If it ever does, Safari widens the layout viewport to fit and every
+   right-anchored fixed control (burger, layers card, map controls, the share
+   button) anchors to the wider box and hangs off the edge. A flex child will
+   not shrink below its content unless it is told it may.
+   ════════════════════════════════════════════════════════════════════════ */
+.hdr-wrap, .hdr { max-width: 100%; }
+.hdr-brand, .hdr-brandcol, .hdr-tally { min-width: 0; }
+/* The tally is the longest thing in the header and the most likely to push.
+   It already wraps; this lets a single unbroken run give way rather than
+   force the row wide. */
+.hdr-tally { overflow-wrap: anywhere; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FINDINGS PANEL (REB-522)
+
+   Only the pieces the Impact panel has no equivalent of. Everything that
+   already exists is reused by name — `.ab-eyebrow`, `.ab-h`, `.ab-lead` and
+   `.ab-sec-t` for the head, `.imp-kpis` / `.imp-kpi` / `.imp-n` / `.imp-l` for
+   the tiles, `.imp-bar*` for every chart, `.imp-sowhat` for finding five. The
+   title gradient and the green section titles come from the REB-486 block
+   above, widened rather than copied.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* A section title with its sources on the right. The rule under it is what
+   separates two sections that are otherwise a wall of charts. */
+/* Bar-fill variants shared with the Impact panel. This findings panel draws no
+   bars of its own any more — Direction A's are a table — but Impact still does,
+   and these live here because that is where they were written. */
+.imp-bar-fill.is-green { background: var(--accent); }
+.imp-bar-fill.is-story { background: var(--story-blue, #154f9f); }
+.imp-bar-fill.is-zero {
+  background: repeating-linear-gradient(135deg,
+    var(--line) 0 4px, transparent 4px 8px);
+}
+.imp-bar-n span { font-weight: 400; color: var(--faint); }
+.imp-kpi.is-story .imp-n { color: var(--story-blue, #154f9f); }
+
+/* DIRECTION A. Hairline rules instead of boxes, one column, the data set in a
+   quiet table rather than a chart with its own furniture. */
+.f-find { margin: 24px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line-2, var(--border)); }
+.f-find:first-of-type { border-top: none; margin-top: 4px; padding-top: 0; }
+.f-kicker {
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 8px;
+}
+.f-find-h {
+  margin: 0 0 8px; font-size: var(--fs-lead); font-weight: 700; line-height: 1.3;
+  letter-spacing: -.015em; color: var(--ink); text-wrap: balance;
+}
+.f-find-h em { font-style: normal; color: var(--primary-d); }
+.f-p { margin: 0; font-size: var(--fs-body); color: var(--ink); line-height: 1.6; }
+.f-p b { color: var(--ink); font-weight: 700; }
+
+/* One measure, so one hue. Four colours were inventing an identity the data
+   does not have, and were most of what made this panel look busy. */
+.f-tbl { width: 100%; border-collapse: collapse; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.f-tbl td { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-label); vertical-align: middle; }
+.f-tbl tr:last-child td { border-bottom: none; }
+.f-t-lab { color: var(--ink); width: 38%; }
+.f-t-plot { width: 40%; padding-right: 14px !important; }
+.f-t-bar { display: block; height: 7px; border-radius: 0 4px 4px 0; background: var(--primary-d); }
+.f-t-val { text-align: right; font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+.f-deep { margin-top: 12px; font-variant-numeric: tabular-nums; }
+.f-deep-row {
+  display: grid; grid-template-columns: 74px 1fr auto; gap: 14px; align-items: baseline;
+  padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.f-deep-row:last-child { border-bottom: none; padding-bottom: 0; }
+.f-deep-depth { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: var(--primary-d); }
+.f-deep-depth small { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 1px; }
+.f-deep-place { font-size: var(--fs-label); font-weight: 700; color: var(--ink); }
+.f-deep-meta { font-size: var(--fs-micro); color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.f-deep-ring { font-size: var(--fs-micro); color: var(--muted); text-align: right; white-space: nowrap; }
+.f-deep-ring b { font-size: var(--fs-label); color: var(--ink); }
+/* A zero is the finding on its row, so it is the one figure that takes a colour
+   of its own rather than reading as an absence of data. */
+.f-deep-ring b.is-none { color: #B26A00; }
+
+.f-nl { font-size: var(--fs-micro); color: var(--muted); line-height: 1.3; }
+
+@media (max-width: 560px) {
+  .f-deep-row { grid-template-columns: 62px 1fr; row-gap: 6px; }
+  .f-deep-ring { grid-column: 1 / -1; text-align: left; }
+  .f-t-lab { width: auto; }
+  .f-t-plot { width: 30%; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE FIRST-LOAD CARD (REB-499)
+
+   Four testers, one conclusion: nothing tells a new visitor what this is, or
+   that the map is tappable. Judy picked direction B on 19 August — a card over
+   the map on arrival, the map visible behind it, both doors offered.
+
+   z-index 32, one above `.overlay`'s 30. The card is the FIRST thing and it has
+   to sit over every panel that could have been restored from a URL; it is also
+   the only thing at that level, so nothing can land on top of it by accident.
+   ══════════════════════════════════════════════════════════════════════════ */
+.welcome { position: fixed; inset: 0; z-index: 32; display: flex;
+  align-items: flex-end; justify-content: center; }
+@media (min-width: 768px) { .welcome { align-items: center; } }
+
+/* Lighter than `.overlay`'s scrim and with no blur: the map behind is the
+   thing the card is pointing at, so it has to stay legible through it. */
+.welcome-scrim { position: absolute; inset: 0; background: rgba(9, 28, 36, .42); }
+
+.welcome-card {
+  position: relative;
+  width: min(460px, calc(100vw - 20px));
+  margin: 0 10px calc(10px + env(safe-area-inset-bottom));
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px 20px 17px;
+  box-shadow: 0 14px 40px rgba(9, 28, 36, .38);
+  display: flex; flex-direction: column; gap: 12px;
+  /* The card enters from below on a phone, where it is a sheet, and simply
+     appears on a desktop, where sliding a centred dialog reads as a toast. */
+  transform: translateY(14px); opacity: 0;
+  transition: transform .26s cubic-bezier(.34, 1.1, .64, 1), opacity .26s;
+}
+@media (min-width: 768px) { .welcome-card { margin: 0; transform: scale(.97); } }
+.welcome.show .welcome-card { transform: none; opacity: 1; }
+.welcome.bye .welcome-card { transform: translateY(10px); opacity: 0; }
+.welcome.bye .welcome-scrim { opacity: 0; transition: opacity .24s; }
+
+.welcome-h {
+  margin: 0; font-family: var(--font-display, var(--font, inherit));
+  font-size: var(--fs-title); font-weight: 800; line-height: 1.22;
+  letter-spacing: -.01em; color: var(--ink); text-wrap: balance;
+}
+/* Sits under the title as its own line, in the brand teal, so the title reads
+   as the name of the thing and this reads as when we are. */
+.welcome-sub {
+  margin: -6px 0 0; font-size: var(--fs-label); font-weight: 700;
+  color: var(--primary-d); letter-spacing: .01em;
+}
+.welcome-lead { margin: 0; font-size: var(--fs-body); color: var(--muted); line-height: 1.5; }
+.welcome-steps li b { font-weight: 800; color: var(--ink); }
+
+/* The card grew from three short steps to four plus a paragraph. It scrolls its
+   own body rather than growing past the screen — and `overscroll-behavior` keeps
+   that scroll off the document, which is locked (8b89951) and cannot move. */
+.welcome-card { max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* Numbered because the steps ARE a sequence — tap, read, share is the order a
+   visitor moves through, and the numbers are what make step one read as an
+   instruction rather than a description of a feature. */
+.welcome-steps {
+  margin: 2px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 9px;
+  counter-reset: wc;
+}
+.welcome-steps li {
+  counter-increment: wc;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px;
+  align-items: baseline;
+  font-size: var(--fs-body); color: var(--ink); line-height: 1.42;
+}
+.welcome-steps li::before {
+  content: counter(wc);
+  grid-column: 1; justify-self: start;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary-l, #E3FBFF); color: var(--primary-d);
+  font-size: var(--fs-micro); font-weight: 800;
+  display: grid; place-items: center;
+  /* baseline-aligned rows put the disc a touch low against its own text */
+  transform: translateY(3px);
+}
+
+.welcome-btns { display: flex; gap: 9px; margin-top: 5px; }
+.welcome-btns button {
+  flex: 1; min-height: 44px; padding: 11px 10px;
+  border-radius: 11px; font: inherit; font-size: var(--fs-label);
+  font-weight: 700; cursor: pointer;
+  transition: background .14s, border-color .14s;
+}
+.welcome-go { border: 0; background: var(--primary); color: #fff; }
+.welcome-go:hover { background: var(--primary-d); }
+.welcome-alt { border: 1.5px solid var(--line-2, var(--line)); background: #fff; color: var(--ink); }
+.welcome-alt:hover { background: var(--bg); }
+.welcome-go:focus-visible, .welcome-alt:focus-visible {
+  outline: 3px solid var(--primary-d); outline-offset: 2px;
+}
+/* The dialog takes focus on open so a screen reader reads the title and the
+   steps before the buttons. It is not an interactive element, so it draws no
+   ring of its own. */
+.welcome-card:focus { outline: none; }
+
+/* At 320 the two buttons cannot both hold their label on one line. */
+@media (max-width: 359px) {
+  .welcome-btns { flex-direction: column; }
+  .welcome-card { padding: 17px 16px 15px; gap: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-card { transition: opacity .2s; transform: none; }
+  .welcome.show .welcome-card { transform: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   REB-533. TAP TARGETS THAT WERE SMALLER THAN THEY LOOKED
+
+   Three filter controls measured 15 to 18px tall, under the 24px minimum, and
+   each sits inside something that opens a story when tapped, so a miss did not
+   do nothing: it opened the story instead of filtering.
+
+   An invisible ::after is the fix rather than padding, because padding would
+   move everything around them. Nothing here changes what is on screen.
+
+   `.scard-tag` is deliberately NOT in this list. Its row gap is 4px, so an
+   expansion tall enough to reach 24px would overlap the chips on the next line
+   and fire the wrong filter. Growing that gap is a spacing decision, so it is
+   Judy's, and it is still open in REB-533.
+   ════════════════════════════════════════════════════════════════════════ */
+/* `overflow:hidden` was clipping the expansion to the box and cancelling it.
+   It comes from core.css:108, where it pairs with `white-space:nowrap` and a
+   100px cap to truncate a long neighbourhood name. This layout already
+   overrode that to `white-space:normal` and `max-width:100%`, so the name
+   wraps and there has been nothing to clip since. Nothing moves on screen. */
+.scard-hood, .sp-cat-badge, .sp-event { position: relative; overflow: visible; }
+/* Above and below are the name, the type and the story text. None is clickable,
+   so a few pixels of overlap costs nothing. */
+/* z-index because a static sibling below was painting over the expansion and
+   eating half of it: measured 20px of target from a 24px box without it. */
+.scard-hood::after { content: ""; position: absolute; inset: -5px -8px; z-index: 1; }
+/* .sp-tags has a 7px gap, so two expanded rows overlap by a few pixels. Both
+   are filter chips doing the same job, so a near miss still filters. */
+.sp-cat-badge::after { content: ""; position: absolute; inset: -4px -3px; z-index: 1; }
+.sp-event::after { content: ""; position: absolute; inset: -9px -3px; z-index: 1; }
+
+/* Partner pins (MyCoast NY): their own icon as the layer swatch, and the report pane. */
+.l-dot.l-dot-icon { width: 12px; height: 16px; border-radius: 0; background: center / contain no-repeat; }
+.sp-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 14px 0 0; font-size: var(--fs-body); line-height: 1.4; }
+.sp-facts dt { font-weight: 600; }
+.sp-facts dd { margin: 0; min-width: 0; }
+.sp-partner-credit { font-size: var(--fs-body); margin: 0 0 12px; color: var(--muted); }
+.sp-partner-links { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.sp-partner-btn { display: inline-block; padding: 10px 16px; border-radius: 999px; background: var(--story-blue-deep); color: #fff; font-weight: 600; font-size: var(--fs-body); text-decoration: none; }
+.sp-partner-btn:hover, .sp-partner-btn:focus-visible { filter: brightness(1.12); }
+.sp-partner-link { font-weight: 600; font-size: var(--fs-body); color: var(--story-blue-deep); }

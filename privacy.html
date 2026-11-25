@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rainproof NYC Flood Map · Privacy notice</title>
+  <meta name="description" content="What happens to a story, a pin, a photo and a contact detail shared with the Rainproof NYC Flood Map.">
+
+  <!-- Deliberately NOT behind the beta gate in index.html, and deliberately
+       indexable. A privacy notice that a resident cannot reach without a
+       password is not a notice. When the beta gate comes out, nothing here
+       changes.
+
+       Self-contained on purpose too. The map's colours are published at runtime
+       by applyTheme() from config.json, so a page that borrowed core.css would
+       render unstyled if that JS did not run. This page has to be readable
+       under every condition, including a bad connection on a phone. The values
+       below are copied from config.json's theme as of 14 August 2026; if the
+       brand changes they can be updated here by hand or left as they are. -->
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #5c6470;
+      --border: #e2e5ea;
+      --bg: #f7f8fa;
+      --primary: #154f9f;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0 20px 80px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { max-width: 660px; margin: 0 auto; }
+    header { padding: 34px 0 22px; border-bottom: 1px solid var(--border); margin-bottom: 26px; }
+    .eyebrow {
+      font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--primary); margin: 0 0 8px;
+    }
+    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 10px; }
+    .sub { color: var(--muted); margin: 0; }
+    h2 { font-size: 20px; line-height: 1.3; margin: 34px 0 10px; }
+    p, li { color: var(--ink); }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    a { color: var(--primary); }
+    .card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px 18px; margin: 18px 0;
+    }
+    .card p:first-child { margin-top: 0; }
+    .card p:last-child { margin-bottom: 0; }
+    .muted { color: var(--muted); font-size: 14px; }
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    /* A text column with `auto` sizes to its content and pushes the last column
+       off the right edge on a phone, which reads as a broken layout rather than
+       a width problem. */
+    table { table-layout: fixed; }
+    th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+    th { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    .scroll { overflow-x: auto; }
+    @media (max-width: 520px) {
+      h1 { font-size: 25px; }
+      body { font-size: 15.5px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Rainproof NYC Flood Map</p>
+    <h1>What happens to what you share</h1>
+    <p class="sub">Last updated Aug 14, 2026. Rebuild by Design.</p>
+  </header>
+
+  <p>This map collects flooding stories from people who live in New York City.
+  It is run by Rebuild by Design. This page says, in plain words, what happens
+  to a story, a pin, a photo and a contact detail once you send them.</p>
+
+  <div class="card">
+    <p><strong>The short version.</strong> Your story, the pin you place and any
+    photos, video or audio you add are published on a public map after our team
+    reads them, and Rebuild by Design may also use them on its website. Your
+    name, email, phone and social handle are not published. Your pin is rounded
+    to about a block, so it never points at an address. You can ask us to change
+    or remove your story at any time and we will.</p>
+  </div>
+
+  <h2>What is published</h2>
+  <ul>
+    <li>What you wrote about the flooding.</li>
+    <li>The pin, rounded to about a block. See below.</li>
+    <li>The neighbourhood you named.</li>
+    <li>Any photos, video, audio or documents you added. These may also appear
+      on the Rebuild by Design website, which is what the tick box on the form
+      asks you to agree to.</li>
+    <li>A name, but only the amount you chose. You can appear with your full
+      name, with your first name and an initial, or with no name at all. You can
+      also send a story to the organizing team without it ever going on the map.</li>
+    <li>A public contact, but only if you filled in that box yourself. It is a
+      separate box, it is optional, and it says on the form that anyone who sees
+      your story can see it.</li>
+  </ul>
+
+  <h2>What is never published</h2>
+  <ul>
+    <li>Your first and last name, unless you chose to appear under it.</li>
+    <li>Your email address.</li>
+    <li>Your phone number.</li>
+    <li>Your social handle.</li>
+    <li>The exact spot your phone reported when you tapped "use my location".</li>
+  </ul>
+  <p>Those details are collected so the Rainproof team can reach you about your
+  story: to check a detail, to ask before quoting you, or to tell you it is
+  live. They are kept in a separate table from the story itself, and only people
+  who have been given a moderator account can open it.</p>
+
+  <h2>Your pin, and why it is not exact</h2>
+  <p>If you tap "use my location" your phone gives us a precise position. At a
+  flooded home that position is your address. So before anything is saved, we
+  round it to three decimal places. That puts your pin somewhere inside a cell
+  about the size of a city block, roughly 110 metres one way and 85 the other.</p>
+  <p>We do not keep the exact position anywhere. It is rounded in your browser
+  before it is sent, and rounded again by the database when it arrives. Nothing
+  we hold can recover the original.</p>
+  <p>The map draws stories at neighbourhood zoom, so the rounding does not
+  change anything you can see.</p>
+
+  <h2>Photos</h2>
+  <p>A photo taken on a phone usually carries hidden information, including the
+  GPS coordinates of where it was taken. Every photo is re-encoded in your
+  browser before it is uploaded, which removes all of it. What reaches us is the
+  picture and nothing else.</p>
+
+  <h2>Where it is stored</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>What</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>The map itself</td><td>GitHub Pages</td></tr>
+      <tr><td>Stories, pins and contact details</td><td>Supabase, on an account paid for by Rebuild by Design</td></tr>
+      <tr><td>Photos, video, audio and documents</td><td>Supabase storage, same account</td></tr>
+      <tr><td>The background map</td><td>Mapbox</td></tr>
+      <tr><td>The check that you are not a bot</td><td>Cloudflare Turnstile</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>These are ordinary commercial services and none of them are run by Rebuild
+  by Design or by New York University. Only named Rainproof staff hold moderator
+  accounts, and only those accounts can read a submission before it is
+  published or read contact details at all.</p>
+
+  <h2>How long it is kept</h2>
+  <ul>
+    <li><strong>Stories that are not published</strong>, because they were
+      rejected or withdrawn, are deleted after 90 days, along with everything
+      attached to them.</li>
+    <li><strong>Contact details for a story that was not published</strong> are
+      deleted on the same 90-day clock.</li>
+    <li><strong>Contact details for a published story</strong> are kept while
+      the story is on the map, so that we can reach you if you ask us to change
+      or remove it. They go when the story goes.</li>
+    <li><strong>Published stories</strong> stay on the map until you ask us to
+      take yours down.</li>
+  </ul>
+  <p>The deletion runs on a schedule, not by hand, so it happens whether or not
+  anybody remembers. Stories and contact details go first, then their photos
+  within a day.</p>
+
+  <h2>Changing or removing your story</h2>
+  <p>Write to us and say which story is yours. The reference number on your
+  confirmation screen is the fastest way to find it, but your email address or
+  a description works too.</p>
+  <p>We will correct it or take it down. Taking it down removes the story, the
+  pin, the photos and the contact details, and it removes the record of any edit
+  a moderator made to it. Nothing is kept back.</p>
+
+  <!-- THE ADDRESS IS IN TWO PLACES: here, and config.json at
+       tenant.org.privacyEmail (which the form and the chat both read). This
+       page has no JavaScript on purpose, so it cannot read config, so the
+       duplication is unavoidable. If it changes, change both:
+       `grep -rn info@rebuildbydesign.org` finds every copy. -->
+  <div class="card">
+    <p><strong>Corrections and removals:</strong>
+      <a href="mailto:info@rebuildbydesign.org">info@rebuildbydesign.org</a></p>
+    <p class="muted">Rebuild by Design &middot;
+      <a href="https://rebuildbydesign.org" target="_blank" rel="noopener">rebuildbydesign.org</a></p>
+  </div>
+
+  <h2>Editing by moderators</h2>
+  <p>A moderator can fix a typo or tidy the language in a story before it goes
+  up. When that happens, the version you sent is kept alongside it and the
+  change is logged with who made it and when. Moderators cannot delete that
+  record. If you think an edit changed your meaning, write to us.</p>
+
+  <h2>Children</h2>
+  <p>This map is for adults. Please do not submit a story on behalf of anyone
+  under 18, and please do not name a child in a story. If we find one we remove
+  it.</p>
+
+  <footer>
+    <p class="muted"><a href="index.html">Back to the map</a></p>
+  </footer>
+
+</div>
+</body>
+</html>

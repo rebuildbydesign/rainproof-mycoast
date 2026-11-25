@@ -1,0 +1,1597 @@
+{
+  "platform": {
+    "supabaseUrl": "https://vhadxjbivhwfponuamrr.supabase.co",
+    "publishableKey": "sb_publishable_Vwq1aejqQH389yVwJf8jUQ_G21GQ7YX",
+    "submitUrl": "https://vhadxjbivhwfponuamrr.supabase.co/functions/v1/submit",
+    "turnstile": {
+      "siteKey": "0x4AAAAAAEUtTRr1VoCTxRBR"
+    }
+  },
+  "tenant": {
+    "slug": "rainproof-nyc",
+    "name": "Rainproof NYC",
+    "org": {
+      "name": "Rebuild by Design",
+      "url": "https://rebuildbydesign.org",
+      "privacyEmail": "info@rebuildbydesign.org"
+    },
+    "branding": {
+      "logoText": "RN",
+      "_logoNote": "REB-459. `logoUrl` used to point at assets/rainproof-logo.png. The wordmark is live text now: it can be re-worded from this file, it needs no new export per tenant, and a screen reader has something to announce. The PNG stays in the repo because scripts/og-card.html still renders it into the share card, which is an image and wants an image.",
+      "_wordmarkNote": "REB-459. `wordmarkFont` names a family that the layout stylesheet has declared with @font-face. Absent, the header name renders in the UI font and nothing breaks — the font is an enhancement, not a dependency. `wordmarkWeight` must match the weight the @font-face declares: RBD Outlined ships at usWeightClass 700 with no other cut, so asking for 800 anywhere would get a browser-synthesised bold, which on an already-outlined face thickens the outline into mush.",
+      "wordmarkFont": "RBD Outlined",
+      "wordmarkWeight": 700,
+      "_wordmarkStrokeNote": "REB-459, revised REB-478. Judy: make it bolder, it is a thin font. This is the honest way to do that. The face has exactly one cut, so font-weight 800 would get a browser-synthesised bold that thickens an already-outlined letterform until its counters close. A text stroke thickens the outline itself instead. 0.8 was measured as too much at the old 22px — it began filling the bowls of R and P. REB-478 took the wordmark to 30px, and the SAME stroke reads lighter as the letterform grows, so 0.7 at 30px is roughly what 0.5 was at 22px plus the extra weight Judy asked for. Re-measure against the header gradient if the size moves again; this number is tied to it. Turn it off with 0.",
+      "wordmarkStroke": 0.7,
+      "title": "Rainproof NYC Flood Map · Share Your Story",
+      "headerName": "Rainproof NYC Flood Map",
+      "headerSub": "Story Collection",
+      "tagline": "Flood stories from across the five boroughs, gathered to make the case for a rainproof city.",
+      "storiesBadgeArea": "from across NYC",
+      "language": "en",
+      "creditPrefix": "Map created by",
+      "partnerPrefix": "With",
+      "_partnersUrlNote": "Judy, 17 August: every partner hyperlinked. Same six URLs as `about.credits.partners`, already checked in a browser (see the note there) — reused rather than re-sourced, so the header and the About panel never cite two different links for the same org. FloodNet is new here: it is a data partner, not one of the six who gathered stories, so it is NOT added to About's 'Gathered with' list, only to this header credit.",
+      "partners": [
+        { "name": "Brooklyn Level Up", "url": "https://bklvlup.org/" },
+        { "name": "FloodNet", "url": "https://www.floodnet.nyc/" },
+        { "name": "MyCoast NY", "url": "https://mycoast.org/ny/flood-watch" },
+        { "name": "Nonprofit Staten Island", "url": "https://nonprofitstatenisland.org/" },
+        { "name": "Rainproof Flatbush", "url": "https://www.cxsebrooklyn.org/" },
+        { "name": "SQREJC", "url": "https://www.sqrejc.org/" },
+        { "name": "The City Sponge", "url": "https://thecitysponge.com/" },
+        { "name": "The Dear Neighbor Project", "url": "https://dearneighborproject.com/" }
+      ],
+      "_creditNote": "REB-477, Judy 12 August. The header is a stack: brand row, waterline, credit strip. The counts sit under the wordmark (one raindrop as a mark, never a tally — counting in dots was rejected as fluff) and the credit gets its own full-width band. That band is the fix: 151 characters of partner credit fit on one line at full width and at no size inside the brand column, which is why REB-476 kept having to hide partners to stop the header ballooning. Partners are an ARRAY so the order is data; they are alphabetical here, filing 'The City Sponge' and 'The Dear Neighbor Project' under T as written. Both numbers in the tally are computed — the story count from the live table, the 311 total from overlays/findings-blocks.json, the same file About and methodology read, so the three can never disagree. That file moved off the drawing grid onto census blocks; the header total is a count of reports and did not change with it.",
+      "tallyAbout": "about flooding",
+      "tallyReports": "flooding reports to 311 since Hurricane Ida (Sept 2021)",
+      "tallyEmpty": "No stories yet",
+      "tallyReportsShort": "reports to 311"
+    },
+    "_welcomeNote": "REB-499. The strongest signal in the UX round: four testers said independently that nothing tells a new visitor what this is, or that the map is tappable. Direction B of three mockups, Judy's pick on 19 August. EVERY STRING HERE IS ALREADY-APPROVED COPY REUSED, not new writing: the title is `branding.tagline` in title case, the lead is `about.lead` verbatim, and step one is Judy's own wording, matched to `cityData.subheading` ('Within a 10 minute walk radius (half-mile)') so the card and the panel it points at describe the same radius the same way. If the radius ever changes, both lines move together.",
+    "welcome": {
+      "title": "Rainproof NYC Flood Map",
+      "subtitle": "How to Use",
+      "lead": "The Rainproof NYC Flood Map combines personal narrative with publicly available flood data to create a more comprehensive picture of the extent of flood impacts across NYC. The map provides a platform for New Yorkers to share their experiences with heavy rainfall, identify flood risk in their neighborhoods, showcase community-led actions, and generate new ideas for addressing the challenge.",
+      "_stepsNote": "The director's copy, 19 August, verbatim: four steps, and the layers toggle leads. `action` and `rest` are separate fields rather than markup inside a string, so the action can be bolded \u2014 every step reads as something to DO \u2014 while config stays plain text that `esc()` escapes. Step one carries no full stop; that is how it was written.",
+      "_mediaClaimNote": "Step four promises photos, videos, audio and files, and the form does take all four: `ACCEPT` in js/form.js is image/*, video/*, audio/* and application/pdf. `files` is PDF ONLY \u2014 if that ever reads as 'any file' to a resident, this line is where to narrow it.",
+      "steps": [
+        { "action": "Toggle between map layers", "rest": " to see where 311 reports and flood sensors have recorded flooding" },
+        { "action": "Click anywhere on the map or search your address", "rest": " to see how heavy rainfall has impacted the area within a 10 minute walk (half-mile)." },
+        { "action": "Click on a raindrop", "rest": " to read a New Yorker's story." },
+        { "action": "Share your own story", "rest": ", and attach any photos, videos, audio or files to support your story." }
+      ],
+      "explore": "Explore the Map",
+      "share": "Share Your Story"
+    },
+    "theme": {
+      "primary": "#2EB4D7",
+      "primaryDark": "#1A8BAA",
+      "primaryLight": "#E3FBFF",
+      "accent": "#56AC52",
+      "danger": "#D63B3B",
+      "text": "#0F2630",
+      "muted": "#4C626C",
+      "border": "#DCEAF0",
+      "bg": "#EDF5F8",
+      "font": "'Public Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      "fontDisplay": "'Public Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    },
+    "map": {
+      "_styleNote": "REB-468. Judy's own Mapbox style (\"Rainproof NYC\", account j00by). It is a PRIVATE style, which works because the pk token below belongs to the same account and is what every visitor loads it with — if that account rotates the token or deletes the style, the basemap goes with it. Its ground is hsl(60,0%,91%), a light grey, which matters: every stepped ramp on this map runs pale-to-dark for low-to-high and only reads correctly over a LIGHT ground. Checked on this one — all four still get more visible as the value rises. A dark style was tried first and inverted every one of them, so re-measure before swapping the basemap again.",
+      "styleUrl": "mapbox://styles/j00by/cmsp57sya01bw01s23ccd3mba",
+      "center": [
+        -73.97,
+        40.685
+      ],
+      "zoom": 10.5,
+      "_boundsNote": "Judy, 17 August: the default view cut off Staten Island and the Bronx. `bounds` is what the map actually loads to now (see js/map.js init and focusNeighborhood's reset) — the same five-borough box the address geocoder is clipped to in js/ui.js, so 'default view' and 'where an address can resolve to' are one extent, not two. `center`/`zoom` stay for story.js's flyTo fallback.",
+      "bounds": [
+        -74.2591,
+        40.4774,
+        -73.7002,
+        40.9176
+      ],
+      "minZoom": 9,
+      "mapboxToken": "pk.eyJ1IjoiajAwYnkiLCJhIjoiY2x1bHUzbXZnMGhuczJxcG83YXY4czJ3ayJ9.S5PZpU9VDwLMjoX_0x5FDQ"
+    },
+    "overlays": {
+      "title": "Map Layers",
+      "exclusiveGroups": false,
+      "layers": [
+        {
+          "id": "current",
+          "label": "Predicted Flooding (Today)",
+          "caption": "Places that flood today, from heavy rain and from coastal storms",
+          "_captionNote": "REB-512, 17 August. It read \"Places that flood today when it rains hard\", which described only part of the layer. This extent is the DEP Stormwater Flood Map UNIONED with the FEMA coastal floodplain, and the coastal half is 156 of its 164 square kilometres — so rain-only wording named the smaller component. If this map ever decides to show rain flooding ONLY, that is a real option and scripts/build-floodplains.py has a --rain-only flag for it: it measures 10.3 sq km today against 82.9 in 2100. It is not what ships, because rain-plus-coastal is what the layer has always been.",
+          "_colorNote": "REB-469. Fill only, no stroke: map.js paints a geojson layer with fill-color + fill-opacity and never sets fill-outline-color, so there has never been one. The brand blue #2db4d9 at 0.75, which is a deliberately loud current-day layer; the story pin is #154f9f and stays legible on top of it.",
+          "type": "geojson",
+          "url": "overlays/flood-2020.json",
+          "color": "#2db4d9",
+          "opacity": 0.85,
+          "defaultOn": true,
+          "group": "risk",
+          "_labelNote": "Judy, 17 August. Was 'Current Flooding', which reads as flooding happening now when it is a model — the Data Dictionary already called these 'modelled exposure areas, not observations' and the panel was the one place contradicting it. 'Predicted' is Amy's own word from her feedback sheet. Measured for the record: this extent is 95% storm surge and 6% stormwater, so it is NOT a rain-only layer and must not be described as one.",
+          "_opacityNote": "Raised from 0.75 on 17 August, with the layer now drawing on top of 2100. Measured over the 91% basemap across 16 combinations: at current 0.85 / 2100 0.90 the three zones a reader has to tell apart sit 3.21:1 (new-by-2100 vs basemap), 1.51:1 (new-by-2100 vs floods-today) and 2.12:1 (floods-today vs basemap). That is the best worst-case of any pairing tried; her previous 0.75 scored 1.45 on the middle one, so this is a small gain and the draw order is what actually did the work. The zones are worth knowing: 157 km2 floods in both, 74 km2 is NEW by 2100, and only 8 km2 floods today but not in 2100."
+        },
+        {
+          "id": "f2100",
+          "label": "Predicted Flooding (Future)",
+          "caption": "Places expected to flood by 2100, from heavy rain and from the rising sea together",
+          "_colorNote": "REB-469. A darker teal of the current layer's brand-blue #2db4d9, so the pair reads as one blue at two depths rather than two unrelated hues. Fill only, no stroke. Deliberately NOT the story blue #154f9f: at full strength that matched the raindrop exactly and swallowed any pin standing on it.",
+          "type": "geojson",
+          "url": "overlays/flood-2100.json",
+          "color": "#17819e",
+          "opacity": 0.9,
+          "defaultOn": false,
+          "group": "risk",
+          "_labelNote": "Paired with the layer above, same qualifier, so the two read as one question answered twice. The 2100 product is NOT the same product at a later date: it adds sea level rise and a DEP flooding category with no present-day equivalent. That belongs in the Data Dictionary, per Judy's call to keep the panel clean.",
+          "stackUnder": "current",
+          "_stackNote": "Judy, 17 August: put today's flooding ON TOP of 2100 so the difference between them is visible. `stackUnder` is read by map.js and inserts this layer beneath ov-current. It exists because REORDERING `overlays.layers` CANNOT DO THIS: f2100 has no defaultOn, so it is added on first toggle, always after current, and always ended up covering it whatever order the array was in. Falls back to the story-pin layer if current has not been added, so toggling in either order is safe."
+        },
+        {
+          "id": "neighborhoods",
+          "label": "Neighborhood Boundaries",
+          "caption": "NYC neighborhoods (NTA 2020)",
+          "type": "geojson",
+          "renderAs": "line",
+          "url": "overlays/nta-neighborhoods.geojson",
+          "color": "#5B6B7A",
+          "width": 1,
+          "opacity": 0.5,
+          "defaultOn": false,
+          "panelHidden": true,
+          "labelField": "ntaname",
+          "highlightColor": "#D63B3B"
+        },
+        {
+          "id": "persistent",
+          "label": "Blocks That Flood Again and Again",
+          "caption": "Census blocks that reported flooding in 4 or 5 of the 5 years since Ida. About one in six New Yorkers lives on one, and together they carry more than 40% of the city's flooding reports.",
+          "_captionNote": "This read '4,079 blocks ... 42%' and was wrong one rebuild later, at 4,082. Same rule as the methodology block: if you are typing a number into config, it belongs in the overlay's meta instead. The exact counts ride in persistent-blocks.geojson under `meta` — blocks, calls, shareOfCalls, population, shareOfPopulation — and the workbook has them to the unit. What survives here are the two ROUNDED proportions, which do not move when a few hundred calls arrive.",
+          "type": "geojson",
+          "url": "overlays/persistent-blocks.geojson",
+          "_colorNote": "JUDY: THIS IS THE ONE COLOUR DECISION HERE AND IT SHOULD BE YOURS. REB-419 measured that only three hue bands are free once the four story colours and the four data layers are placed, so this layer deliberately spends NO hue: two steps of neutral slate, carried by value alone. That is also an argument on the merits — this is an analytical finding about where to look, not a fifth hazard category competing with the 311 layers, and a grey reads that way. If you want it to shout, it needs a hue somebody else gives up.",
+          "color": "#8A97A5",
+          "opacity": 0.55,
+          "steps": {
+            "field": "years",
+            "stops": [
+              {
+                "at": 4,
+                "color": "#8A97A5",
+                "label": "4 of the 5 years"
+              },
+              {
+                "at": 5,
+                "color": "#2F3B47",
+                "label": "all 5 years"
+              }
+            ]
+          },
+          "defaultOn": false,
+          "panelHidden": true,
+          "_parkedNote": "PARKED BY JUDY, 17 August 2026, for a later phase. `panelHidden` takes it out of the layers panel and out of the key; `defaultOn: false` means it never fetches, so the layer is completely inert and costs a visitor nothing. Same mechanism `neighborhoods` already uses. Everything else here is finished and left intact: the file, the meta, the ordinal ramp and the two open notes below. UNPARKING IS THIS ONE KEY. Do not delete the layer or the geojson to park it — rebuilding this file means rerunning the census-block spatial joins, and the colour decision in _colorNote has still never been made.",
+          "_unitNote": "Persistence is ORDINAL — how many of five years a block reported — not a count, so unlike a call-density layer it does not inflate with block area. That is precisely why this one can honestly be drawn on real census blocks while the three 311 heat layers stay on the equal-area grid. Do not 'fix' that inconsistency; it is the whole point.",
+          "_hoverNote": "No hover. `addHitLayer` builds a CIRCLE layer over the source, which is right for the point overlays and wrong for polygons, so a hover block here would silently do nothing. Each feature still carries geoid, years, calls and pop, so wiring a fill hover later needs no rebuild of the file.",
+          "keyFoot": "Shaded by how many of the five years since Ida the block reported, not by how many reports it holds. Do not compare these two shades to the 311 layers, which are scaled against their own reports."
+        },
+        {
+          "id": "council",
+          "label": "Council Districts",
+          "caption": "The 51 council districts, so a block can be tied to the person who represents it",
+          "type": "geojson",
+          "renderAs": "line",
+          "url": "overlays/council-districts.geojson",
+          "_colorNote": "Judy, 17 August: soft pink, to read distinct from the slate boundary default and from community boards' purple. #C85A82, 3.28:1 against the basemap.",
+          "color": "#C85A82",
+          "width": 1.6,
+          "opacity": 0.75,
+          "hoverHighlight": true,
+          "labelProp": "label",
+          "defaultOn": false,
+          "_labelFieldNote": "Deliberately no labelField. That key wires a layer into the dissolved-outline companion used for Area selection, which map.js reads only for 'neighborhoods'. Setting it here would build an unused source. District numbers need a symbol layer, which is the next stage, not this one.",
+          "_dataNote": "Geometry from NYC DCP 872g-cjhh, simplified to 0.0002 degrees (about 20 metres) which takes it from 4.3 MB to 363 KB, alongside the 334 KB NTA file. Each feature carries coundist, member and label. District 3 has no member: the seat is vacant in the city's own roster, last term ended 3 Feb 2026. Rebuilt by findings/build-council-boundary.py.",
+          "group": "boundaries"
+        },
+        {
+          "id": "community",
+          "label": "Community Boards",
+          "caption": "The 59 community boards, so a block can be tied to the board that reviews what gets built there",
+          "type": "geojson",
+          "renderAs": "line",
+          "url": "overlays/community-boards.geojson",
+          "color": "#8E44AD",
+          "_colorNote": "Judy, 17 August: brighter, bolder purple after the first pass read too faint. #8E44AD, 4.79:1 against the basemap, up from #9B72B0's 3.16:1.",
+          "width": 1.8,
+          "opacity": 0.85,
+          "hoverHighlight": true,
+          "labelProp": "label",
+          "defaultOn": false,
+          "group": "boundaries",
+          "countFeatures": true,
+          "_dataNote": "Built by findings/build-community-boards.py from DCP's community district boundaries, simplified to 0.0002 degrees like the council file. The source has 71 features; 12 are joint interest areas (Central Park, the airports, the big cemeteries, Rikers) with no board and nobody to write to, and they are dropped. 59 boards: Manhattan 12, Bronx 12, Brooklyn 18, Queens 14, Staten Island 3.",
+          "_labelFieldNote": "Deliberately no labelField, same as the council layer: that key wires a layer into the dissolved-outline companion used for Area selection, which map.js reads only for 'neighborhoods'. Setting it here would build an unused source."
+        },
+        {
+          "id": "flood_street",
+          "label": "Street Flooding",
+          "caption": "Water sitting on streets, reported to 311",
+          "hover": {
+            "count": "weight",
+            "suffix": " reports"
+          },
+          "renderAs": "steps",
+          "color": "#ef3b2c",
+          "opacity": 0.6,
+          "defaultOn": false,
+          "source": {
+            "type": "columns",
+            "url": "overlays/flood311.json",
+            "_note": "REB-414. All three 311 layers read ONE file and differ only in which column they paint. Frozen weekly by scripts/build-persistence.mjs; see meta.built for the date.",
+            "fields": {
+              "weight": "s"
+            }
+          },
+          "steps": {
+            "field": "weight",
+            "stops": [
+              {
+                "at": 1,
+                "color": "#fb6a4a",
+                "label": "1 report"
+              },
+              {
+                "at": 2,
+                "color": "#ef3b2c",
+                "label": "2 reports"
+              },
+              {
+                "at": 3,
+                "color": "#cb181d",
+                "label": "3 to 4 reports"
+              },
+              {
+                "at": 5,
+                "color": "#a50f15",
+                "label": "5 to 9 reports"
+              },
+              {
+                "at": 10,
+                "color": "#67000d",
+                "label": "10 or more reports"
+              }
+            ],
+            "strokeFrom": 5,
+            "_note": "Reds on the 9-class version, classes 5-9. Judy, 12 August: more red tone. The orange cast was coming from the light end of the window — #fcbba1 and #fc9272 are salmon, not red — so the fix is to slide off them rather than to leave Reds. This is the darkest five-step window the scheme has and the reddest. Sliding the window is the allowed move; nudging a single step is not, or it stops being a published scheme and nobody can tell which steps were touched."
+          },
+          "exclusiveGroup": "flood311",
+          "_colorNote": "REB-469 follow-on, Judy 12 August: the panel swatch is the ramp's BRIGHTEST step — highest chroma — not its darkest. Same rule across street flooding, clogged storm drains and FloodNet, and it is the rule that produced her own pick of #ef3b2c for street flooding. The swatch is the only thing naming a layer's colour before you switch it on, and the dark end of a sequential scheme reads as near-black at 14px. Paint is untouched: layer.color is the panel dot plus the stepRamp fallback, and stops[0] always exists on these layers so the fallback never fires.",
+          "group": "reports"
+        },
+        {
+          "id": "flood_basin",
+          "label": "Clogged Storm Drains",
+          "caption": "Storm drains blocked so water can't get away, reported to 311",
+          "hover": {
+            "count": "weight",
+            "suffix": " reports"
+          },
+          "renderAs": "steps",
+          "color": "#dd3497",
+          "opacity": 0.6,
+          "defaultOn": false,
+          "source": {
+            "type": "columns",
+            "url": "overlays/flood311.json",
+            "_note": "REB-414. All three 311 layers read ONE file and differ only in which column they paint. Frozen weekly by scripts/build-persistence.mjs; see meta.built for the date.",
+            "fields": {
+              "weight": "d"
+            }
+          },
+          "steps": {
+            "field": "weight",
+            "stops": [
+              {
+                "at": 1,
+                "color": "#fcc5c0",
+                "label": "1 report"
+              },
+              {
+                "at": 2,
+                "color": "#fa9fb5",
+                "label": "2 reports"
+              },
+              {
+                "at": 3,
+                "color": "#f768a1",
+                "label": "3 to 4 reports"
+              },
+              {
+                "at": 5,
+                "color": "#dd3497",
+                "label": "5 to 9 reports"
+              },
+              {
+                "at": 10,
+                "color": "#ae017e",
+                "label": "10 or more reports"
+              }
+            ],
+            "strokeFrom": 5
+          },
+          "exclusiveGroup": "flood311",
+          "_colorNote": "REB-469 follow-on, Judy 12 August: the panel swatch is the ramp's BRIGHTEST step — highest chroma — not its darkest. Same rule across street flooding, clogged storm drains and FloodNet, and it is the rule that produced her own pick of #ef3b2c for street flooding. The swatch is the only thing naming a layer's colour before you switch it on, and the dark end of a sequential scheme reads as near-black at 14px. Paint is untouched: layer.color is the panel dot plus the stepRamp fallback, and stops[0] always exists on these layers so the fallback never fires.",
+          "group": "reports"
+        },
+        {
+          "id": "flood_homes",
+          "label": "Water in Basements",
+          "caption": "Water coming up into homes and basements, reported to 311",
+          "hover": {
+            "count": "weight",
+            "suffix": " reports"
+          },
+          "renderAs": "steps",
+          "color": "#54278f",
+          "opacity": 0.6,
+          "defaultOn": false,
+          "source": {
+            "type": "columns",
+            "url": "overlays/flood311.json",
+            "_note": "REB-414. All three 311 layers read ONE file and differ only in which column they paint. Frozen weekly by scripts/build-persistence.mjs; see meta.built for the date.",
+            "fields": {
+              "weight": "h"
+            }
+          },
+          "steps": {
+            "field": "weight",
+            "stops": [
+              {
+                "at": 1,
+                "color": "#bcbddc",
+                "label": "1 report"
+              },
+              {
+                "at": 2,
+                "color": "#9e9ac8",
+                "label": "2 reports"
+              },
+              {
+                "at": 3,
+                "color": "#807dba",
+                "label": "3 reports"
+              },
+              {
+                "at": 4,
+                "color": "#6a51a3",
+                "label": "4 reports"
+              },
+              {
+                "at": 5,
+                "color": "#54278f",
+                "label": "5 or more reports"
+              }
+            ],
+            "strokeFrom": 4,
+            "_note": "Purples on the 9-class version, classes 4-8. Judy, 12 August, twice: darkest (5-9) first, then back one notch — slightly lighter. Purples is the palest of the three 311 schemes class for class, which is why this layer moved when the other two did not read the same way. Sliding the window is the allowed move; nudging a single step is not, or it stops being a published scheme and nobody can tell which steps were touched.",
+            "_scaleNote": "Judy, 17 August: this layer gets its own top step at 5+, not the 10+ the other three share. Measured on the frozen pull: 3,904 blocks report it, the busiest has 9 calls, and NOT ONE reaches 10. A shared 10+ top would have left the darkest purple permanently undrawn. The breaks below it still line up with the others at 1 and 2, so the pale end is comparable; only the top differs, and it differs because the data does."
+          },
+          "exclusiveGroup": "flood311",
+          "_colorNote": "REB-469 follow-on, Judy 12 August: the panel swatch is the ramp's BRIGHTEST step — highest chroma — not its darkest. Same rule across street flooding, clogged storm drains and FloodNet, and it is the rule that produced her own pick of #ef3b2c for street flooding. The swatch is the only thing naming a layer's colour before you switch it on, and the dark end of a sequential scheme reads as near-black at 14px. Paint is untouched: layer.color is the panel dot plus the stepRamp fallback, and stops[0] always exists on these layers so the fallback never fires. Water in basements needs no change under this rule: on Purples classes 4-8 chroma rises all the way up, so #54278f is both the darkest step and the brightest one. It is the one layer where the two readings agree — do not 'fix' it to a middle step for visual consistency with its neighbours.",
+          "group": "reports"
+        },
+        {
+          "id": "flood_sewer",
+          "label": "Sewer Backup",
+          "caption": "Sewage backing up out of the drains, reported to 311",
+          "hover": {
+            "count": "weight",
+            "suffix": " reports"
+          },
+          "renderAs": "steps",
+          "color": "#ec7014",
+          "_colorNote": "The panel swatch is the ramp's BRIGHTEST step by chroma, not its darkest — the same rule the other three 311 layers and FloodNet follow, because the dark end of a sequential scheme reads as near-black at 14px. Measured across YlOrBr classes 4-8, chroma peaks at #ec7014 (0.847). The DARKEST step #993404 is what cityData.complaints paints as a NUMBER in the half-mile panel, where it needs contrast on white and gets 7.38:1.",
+          "opacity": 0.6,
+          "defaultOn": false,
+          "source": {
+            "type": "columns",
+            "url": "overlays/flood311.json",
+            "_note": "All four 311 layers read ONE file and differ only in which column they paint. `b` is sewer backup, split out of `h` on 17 August.",
+            "fields": {
+              "weight": "b"
+            }
+          },
+          "steps": {
+            "field": "weight",
+            "stops": [
+              {
+                "at": 1,
+                "color": "#fec44f",
+                "label": "1 report"
+              },
+              {
+                "at": 2,
+                "color": "#fe9929",
+                "label": "2 reports"
+              },
+              {
+                "at": 3,
+                "color": "#ec7014",
+                "label": "3 to 4 reports"
+              },
+              {
+                "at": 5,
+                "color": "#cc4c02",
+                "label": "5 to 9 reports"
+              },
+              {
+                "at": 10,
+                "color": "#993404",
+                "label": "10 or more reports"
+              }
+            ],
+            "strokeFrom": 5,
+            "_note": "ColorBrewer YlOrBr on the 9-class version, classes 4-8, taken verbatim. Judy asked for yellow, 17 August. Measured against the 91% grey basemap it runs 1.30:1 to 6.02:1, which puts it in the same family as the other three (street 2.36-10.83, drains 1.23-5.52, basements 1.50-8.30) so no layer shouts louder than the rest. Paler windows were rejected: classes 1-5 top out at 1.75:1, which is a wash across 21,684 blocks. Slide the whole window or re-pick the scheme; do not nudge one step.",
+            "_clashNote": "THIS OVERLAPS FLOODNET, KNOWINGLY. FloodNet is YlOrBr classes 3-6 and shares four of these five values, and both layers are circles. Judy, 17 August: 'yellow for sewer, floodnet stays as is, we'll work on it later.' So this is a recorded trade, not an oversight — do not quietly repaint either one."
+          },
+          "exclusiveGroup": "flood311",
+          "_caveatNote": "The largest of the four at 49.2% of all calls, and the least weather-driven: median 22 calls a day whatever the weather, only 39% of calls above that baseline, DEP finds no city sewer issue in 64% of cases. findings/README.md explains why it is counted anyway. Worth reading before quoting this layer alone.",
+          "group": "reports"
+        },
+        {
+          "id": "floodnet",
+          "label": "FloodNet Sensors",
+          "caption": "Instruments bolted to street poles that measure how deep water gets. They record depth, not pictures — there are no cameras in this network.",
+          "type": "geojson",
+          "url": "overlays/floodnet.json",
+          "renderAs": "circle",
+          "color": "#111111",
+          "opacity": 0.9,
+          "defaultOn": false,
+          "steps": {
+            "shape": "diamond",
+            "_focusScaleNote": "19 August, Judy: the sensors get lost inside the half-mile ring. Multiplies icon-size while a story's radius is open and returns to 1 on clearRadius, so the citywide sizes below are untouched. Read generically by js/map.js, so any shaped layer can carry one.",
+            "focusScale": 1.6,
+            "shapePxByZoom": [
+              [
+                10,
+                11
+              ],
+              [
+                13,
+                15
+              ],
+              [
+                16,
+                24
+              ]
+            ],
+            "_note": "NO STOPS, DELIBERATELY. Judy, 17 August: 'no color scale when layer is selected, the toolbar is helpful enough' — the hover already reports the sensor name, how many times it measured water, when it was installed and its deepest reading, which is more than a five-colour key could say. layerScales() keys off steps.stops?.length, so having no stops is what removes the key; there is no separate hide flag to find. Every sensor draws the same black diamond at the same size.",
+            "_removedNote": "The ramp that was here until 17 August, kept because it encoded two real decisions and somebody will ask. Slate #64748B at 0 was 'no flooding measured yet', deliberately NOT the palest yellow, because absence of a measurement is a different kind of thing from a low measurement and 184 of the sensors carry it. The four measuring steps were YlOrBr classes 2-5. Also gone with it: radiusScale 1.9, which existed only to keep stepped CIRCLES visible at citywide zoom and is meaningless for a fixed-size diamond. Old stops: 0 = #64748B (no flooding measured yet); 1 = #fec44f (measured water once); 2 = #fe9929 (2 to 4 times); 5 = #ec7014 (5 to 9 times); 10 = #cc4c02 (10 or more times)"
+          },
+          "hover": {
+            "lines": [
+              {
+                "field": "name",
+                "text": true
+              },
+              {
+                "field": "n",
+                "one": "time",
+                "many": "times",
+                "prefix": "Measured water ",
+                "zero": "No flooding measured here yet"
+              },
+              {
+                "field": "since",
+                "date": true,
+                "prefix": "Installed "
+              },
+              {
+                "field": "depth",
+                "prefix": "Deepest ",
+                "suffix": " inches"
+              }
+            ]
+          },
+          "countFeatures": true,
+          "_colorNote": "Judy, 17 August: black diamonds. Black because the yellow ramp it used to carry now belongs to Sewer Backup, and two YlOrBr layers on the same map was the clash she parked earlier that day. Black is the one value no other layer on this map uses, and with the diamond shape the sensors are identifiable by form as well as colour, which is what the amber was doing badly.",
+          "group": "measured"
+        },
+        {
+          "id": "greeninfra",
+          "label": "Green Infrastructure (DEP)",
+          "caption": "Each dot is one thing built to soak up rain. Dark green is finished. Light green is designed or being built. Most are basins under the pavement you cannot see from the street.",
+          "_designNote": "Judy, 14 August: back to one dot per asset. The binned version counted points into ~110m cells so it could be read like the 311 layers, which made it comparable but hid what was actually there. A resident asking what is near me wants the thing, not the density. `bin` is gone and the per-asset hover is restored from ebcb322.",
+          "renderAs": "circle",
+          "radius": 3.2,
+          "radiusByZoom": [
+            [
+              10,
+              2.2
+            ],
+            [
+              13,
+              3.4
+            ],
+            [
+              16,
+              6.5
+            ]
+          ],
+          "color": "#0f7f12",
+          "_colorNote": "Judy, 17 August: match the built geopoints, the dark green is not in use any more. This is the layer's representative colour — the dot beside 'Green Infrastructure (DEP)' in the Map Layers panel. It is NOT what paints the assets: with a `steps` block the circle takes the ramp, so this value only ever names the layer.",
+          "opacity": 0.85,
+          "strokeWidth": 0.6,
+          "defaultOn": false,
+          "source": {
+            "type": "columns",
+            "url": "overlays/greeninfra.json",
+            "_note": "One row per asset, all three status groups. `s` is 0 for built and 1 for designed or under construction, and rides as a number so the colour ramp can read it; the hover maps it back to words. Written weekly by scripts/build-persistence.mjs.",
+            "fields": {
+              "asset_type": "t",
+              "status_code": "s"
+            },
+            "lookup": {
+              "asset_type": "types"
+            }
+          },
+          "steps": {
+            "field": "status_code",
+            "_note": "Two stops, and this is a CATEGORY not a scale. Judy's own values, 17 August: #0f7f12 is built, #5ee161 is designed or being built. Light means less certain, which is the right direction — a design submission is not a thing on the ground. These replaced #00441b / #74c476 and are no longer ColorBrewer Greens steps; they are hers, so do not 'restore' them to a published ramp.",
+            "stops": [
+              {
+                "at": 0,
+                "color": "#0f7f12",
+                "label": "Built",
+                "countFrom": "assets"
+              },
+              {
+                "at": 1,
+                "color": "#5ee161",
+                "label": "Designed or being built",
+                "countFrom": "inProgress"
+              }
+            ],
+            "_shapeNote": "TRIANGLES WERE TRIED AND REJECTED, 17 August. Judy asked for them so the DEP assets would not be confused with the 311 dots, then reverted: 'I regret making them triangles. It's actually worse when 311 calls are toggled on. I think the dots, the geo points, were much better.' Do not propose them again without a new reason — the differentiation argument has been tested against the real map and lost. Setting `\"shape\": \"triangle\"` here plus `\"shapePxByZoom\"` is the whole re-do if it ever comes back; the renderer is still in map.js, unused, exactly as the diamond mechanism is. Judy's greens from the same afternoon STAY: they are a separate decision she kept.",
+            "categorical": true,
+            "legendReverse": true,
+            "_legendNote": "Stops stay ASCENDING because Mapbox `step` requires it; the key is reversed for display only. categorical draws separate rows with round dots instead of a joined strip, so it cannot be read as a scale. countFrom names a key in the overlay's own meta, so the numbers come from the file rather than from config.",
+            "_colorNote": "Judy, 14 August: the light green was too muted. #a1d99b sat at 1.33 contrast on the hsl(60,0%,91%) basemap, which is nearly invisible at a 2.2px dot. #74c476 is the next step up the same Greens ramp: 1.73 on the basemap, 5.37 against the built dark green, and dE 10.7 from the story green #16A97B. Brighter was measured and rejected: #66bd63 reaches 1.90 on the basemap but falls to dE 8.9 from that story colour, under the threshold REB-419 set when it rebuilt the story palette."
+          },
+          "hover": {
+            "lines": [
+              {
+                "field": "asset_type",
+                "text": true,
+                "map": {
+                  "ROWB": "Planted strip that soaks up rain",
+                  "ROWGS": "Planted street corner",
+                  "ROWRG": "Rain garden",
+                  "ROWSGS": "Planted street corner",
+                  "ROWEB": "Planted strip that soaks up rain",
+                  "Rain Garden": "Rain garden",
+                  "ROW Infiltration Basin with Concrete Top": "Basin under the pavement",
+                  "ROW Infiltration Basin with Grass Top": "Basin under grass",
+                  "ROW Infiltration Basin with Combination of Concrete and Grass Top": "Basin under pavement and grass",
+                  "Permeable Pavers": "Paving that lets rain soak through",
+                  "ROW Permeable Pavement": "Paving that lets rain soak through",
+                  "Porous Asphalt": "Asphalt that lets rain soak through",
+                  "Porous Concrete": "Concrete that lets rain soak through",
+                  "Subsurface Storage": "Underground storage",
+                  "Subsurface Detention System": "Underground holding tank",
+                  "Subsurface Pipe/Broken Stone": "Underground pipe in a stone bed",
+                  "Subsurface Pipe": "Underground pipe",
+                  "Detention System": "Holding tank",
+                  "Detention System (Connected to Sewer)": "Holding tank connected to the sewer",
+                  "Synthetic Turf Field Storage Layer": "Storage layer under a turf field",
+                  "Green Roof": "Green roof",
+                  "Blue Roof": "Roof that holds rain back",
+                  "Combined Blue/Green Roof": "Planted roof that holds rain back",
+                  "Rooftop Farm": "Rooftop farm",
+                  "Engineered Soil Tree Pit": "Tree pit built to soak up rain",
+                  "Drywell": "Drywell",
+                  "Cistern": "Cistern",
+                  "Gravel Bed": "Gravel bed",
+                  "Rainwater Harvesting": "Rainwater collection",
+                  "Multiple GI Components": "Several kinds in one spot",
+                  "Multiple GI Components Detention": "Several kinds in one spot",
+                  "ROW Porous Concrete": "Concrete that lets rain soak through"
+                },
+                "fallback": "Something built to soak up rain"
+              },
+              {
+                "field": "status_code",
+                "text": true,
+                "map": {
+                  "0": "Built",
+                  "1": "Designed or being built"
+                }
+              }
+            ]
+          },
+          "group": "measured"
+        },
+        {
+          "id": "mycoast",
+          "_note": "MyCoast NY Flood Watch photo reports tagged Rainfall, from the 5 Oct 2026 export Hannah Eisler Burnett sent. Built by scripts/build-mycoast.mjs. Icon is MyCoast's own Flood Watch pin. STAGING: labels and copy are placeholders until Judy words them.",
+          "label": "MyCoast NY Flood Watch",
+          "type": "geojson",
+          "url": "overlays/mycoast.json",
+          "renderAs": "icon",
+          "icon": "assets/partners/mycoast-flood-watch.svg",
+          "iconPxByZoom": [[10, 20], [13, 28], [16, 38]],
+          "defaultOn": false,
+          "countFeatures": true,
+          "partner": {
+            "typeLabel": "MyCoast NY report",
+            "byline": "A MyCoast reporter",
+            "credit": "Shared with Rainproof by MyCoast NY. Photos and words belong to the reporter and MyCoast.",
+            "reportLink": "See this report on MyCoast",
+            "toolUrl": "https://mycoast.org/ny/flood-watch",
+            "toolLink": "Explore MyCoast NY Flood Watch",
+            "depthLabel": "Water depth",
+            "depthUnit": "inches (reporter's guess)",
+            "floodedLabel": "What flooded",
+            "rainLabel": "Rain in the 24 hours before"
+          },
+          "group": "partners"
+        }
+      ],
+      "groups": [
+        {
+          "id": "risk",
+          "label": "NYC Storm Surge & Stormwater",
+          "_note": "Judy, 17 August: the flood layers needed a header of their own. Her wording. It does the job the removed sub-lines were doing — naming both hazards — which is why the rows below can stay short. Worth knowing when reading it: today's extent is 95% storm surge and 6% stormwater, so the order in this header is the order of size, not the order of this map's subject. The full breakdown and the eightfold stormwater growth to 2100 are in the Data Dictionary, which is where Judy asked the nuance to live rather than in the panel."
+        },
+        {
+          "id": "reports",
+          "label": "Reported to 311",
+          "note": "since Hurricane Ida",
+          "_note": "This header is what lets the four rows below drop their '(311)' suffix — said once here instead of four times, which is also what stops 'Clogged Storm Drains (311)' colliding with its own count badge (Shino's finding). The note carries NO number: the header tally already states 113,481 and a second copy is a second thing to go stale."
+        },
+        {
+          "id": "measured",
+          "label": "Sensors & Infrastructure"
+        },
+        {
+          "id": "partners",
+          "label": "Partner Reports"
+        },
+        {
+          "id": "boundaries",
+          "label": "Boundaries",
+          "style": "pill",
+          "_note": "Rendered as pills, not rows. These are wayfinding, not hazards, and a full row with a colour swatch makes a district outline look like another kind of flooding. Pills also absorb a third boundary later without growing the list."
+        }
+      ]
+    },
+    "examples": {
+      "idPrefix": "5eed0001-",
+      "label": "Example",
+      "title": "An illustrative story written to show how the map works — not a real resident submission.",
+      "impactNote": "These are example stories, written to show how the map works. The story counts above are illustrative; the city records below are real.",
+      "paneNote": "Example story — written to show how the map works. The city records below are real."
+    },
+    "cityData": {
+      "appToken": "CKZecsgADZVwa6p43IAUYYdaf",
+      "_appTokenNote": "Public identifier, not a credential. Socrata app tokens carry no authentication and grant no privileges; they only give this app its own rate-limit budget instead of the shared anonymous pool. Safe to commit. The SECRET token issued alongside it is a real credential and must never appear here.",
+      "radiusMeters": 805,
+      "radiusLabel": "half mile",
+      "_focusLayersNote": "18 August: flood_sewer added. Sewer Backup split out of Water in Basements on 17 August (see complaints.kinds below) and was never added here, so it was the one 311 layer an open story didn't switch on and didn't clip to the half-mile ring — a manually-toggled Sewer Backup kept drawing every point citywide while every other layer was clipped. This list is read generically (js/map.js focusRadius/focusIds), so adding the id was the whole fix.",
+      "focusLayers": [
+        "flood_street",
+        "flood_basin",
+        "flood_homes",
+        "flood_sewer",
+        "greeninfra",
+        "floodnet"
+      ],
+      "since": "2021-09-01",
+      "sinceLabel": "2021",
+      "heading": "Within a 10 minute walk radius (half-mile)",
+      "_subheadingNote": "18 August, third pass: Judy's read was that the previous version didn't make sense to a first-time visitor — a run-on trying to cover both numbers below AND credit DEP/FloodNet by name in one breath, with 'and what the city has built' not grammatically matching 'New Yorkers reported'. Rewritten to two parallel clauses, one trailing 'since'. Dropped '(DEP and FloodNet Sensors)' entirely rather than fix its grammar — those names are redundant with the section labels directly under it now (`labelHalfMile`), so naming them again here was doing the same job twice.",
+      "subheading": "What New Yorkers reported to 311, and what the city has built, since Hurricane Ida.",
+      "complaints": {
+        "url": "https://data.cityofnewyork.us/resource/erm2-nwe9.json",
+        "field": "descriptor",
+        "geomField": "location",
+        "dateField": "created_date",
+        "noun": [
+          "flooding report to 311",
+          "flooding reports to 311"
+        ],
+        "_labelHalfMileNote": "18 August, Judy's audit: a fixed category NAME for the half-mile panel's cell label, not the pluralised noun above it. A name doesn't have to agree in number with the count next to it, which is what let 'flooding reports to 311 since 2021' (sentence case) sit beside 'Green Infrastructure asset' (Title Case, forced by that field being a proper term) — two different grammatical shapes reading as two different styles. Read by js/ui.js's cityContextHtml only; the Impact panel and admin still use `noun` above.",
+        "labelHalfMile": "Reported to 311",
+        "_colorNote": "18 August: these four match each layer's own panel swatch now (layer.color in overlays.layers — the ramp's brightest step by chroma), not its darkest step. They used to be the darkest step, for contrast reasons that turned out to apply to js/admin.js's number, not to this dot — see the dot() comment in js/ui.js. Water in basements is unchanged because its ramp (Purples) is the one case where the darkest step IS the swatch (REB-489). Do not repeat this drift: if a layer's swatch color ever changes, this has to change with it, and there is no code link between them.",
+        "kinds": [
+          {
+            "id": "Street Flooding (SJ)",
+            "label": "street flooding",
+            "col": "s",
+            "color": "#ef3b2c"
+          },
+          {
+            "id": "Catch Basin Clogged/Flooding (Use Comments) (SC)",
+            "label": "clogged storm drains",
+            "col": "d",
+            "color": "#dd3497"
+          },
+          {
+            "_splitNote": "SPLIT 17 August. These two descriptors were one kind, and merging them is why 'Water in Basements' claimed 60,791 calls. Sewer Backup alone is 55,769 of those, so the basement layer was overstated by about twelve times. findings/README.md settled this on 14 August — 'Four 311 categories, kept separate everywhere ... never merged into one layer' — and the map was the last place still merging them. Do not merge them back: they are different things happening to a resident, and the workbook counts them apart.",
+            "id": "Excessive Water In Basement (WEFB)",
+            "label": "water in basements",
+            "col": "h",
+            "color": "#54278f"
+          },
+          {
+            "_caveatNote": "Sewer backup is the largest of the four at 49.2% of all calls, and the least weather-driven: median 22 calls a day whatever the weather, only 39% of calls above that baseline, and DEP finds no city sewer issue in 64% of cases. It stays in because 311's own guidance tells people to report it during and after a weather event. That reasoning and the eight measures behind it are in the Data Dictionary and findings/README.md. Worth knowing before anyone quotes this layer on its own.",
+            "id": "Sewer Backup (Use Comments) (SA)",
+            "label": "sewer backup",
+            "col": "b",
+            "color": "#ec7014"
+          }
+        ]
+      },
+      "green": {
+        "url": "https://data.cityofnewyork.us/resource/df32-vzax.json",
+        "geomField": "the_geom",
+        "color": "#00441b",
+        "_nounNote": "REB-452. The umbrella has to cover all 31 asset_type values, not the three families the breakdown names. 'Rain gardens, basins and planted strips' described 13,144 of 13,959 and left 815 real assets outside its own label. The three families stay as the breakdown under it, where they are accurate.",
+        "noun": [
+          "thing built to soak up rain",
+          "things built to soak up rain"
+        ],
+        "_labelHalfMileNote": "18 August, Judy: this one panel should say 'Green Infrastructure' literally, not 'soak up rain' — a direct, current, scoped ask, distinct from LANGUAGE.md's resident-copy ban on the same phrase (which stays in force everywhere this field ISN'T read: the Impact panel and admin still use `noun` above). Changed again the same evening, her audit: was a [singular, plural] noun pair ('Green Infrastructure asset(s)'), which put Title Case directly above the lowercase breakdown rows under it. Now a fixed category name, same shape as `complaints.labelHalfMile` beside it — a name doesn't inflect, so there's nothing left to clash.",
+        "labelHalfMile": "Green Infrastructure",
+        "_statusColorNote": "18 August, Judy: differentiate built vs. in-progress in the half-mile panel, since a radius can have both. These are her own locked values from the map layer itself (overlays.layers greeninfra.steps, 17 August) — reused, not re-picked. Dot colour only, same as every other swatch in this panel (see the dot() comment in js/ui.js): colorBuilt (#0f7f12) measures 2.91:1 on white and must never be used as text, which is exactly why `color` above (#00441b, 11.4:1) stays the one admin.js paints as a number.",
+        "colorBuilt": "#0f7f12",
+        "colorInProgress": "#5ee161",
+        "where": "status_gro='Constructed'",
+        "sinceWhere": "status_gro='Constructed' and constructed_date>='2021-09-01' and constructed_date<='{today}'",
+        "kinds": [
+          {
+            "ids": [
+              "ROWB",
+              "ROWGS",
+              "ROWSGS",
+              "ROWEB"
+            ],
+            "label": "planted strips and corners",
+            "color": "#238b45"
+          },
+          {
+            "ids": [
+              "ROW Infiltration Basin with Concrete Top",
+              "ROW Infiltration Basin with Grass Top",
+              "ROW Infiltration Basin with Combination of Concrete and Grass Top"
+            ],
+            "label": "basins under the pavement",
+            "color": "#41ab5d"
+          },
+          {
+            "ids": [
+              "Rain Garden",
+              "ROWRG"
+            ],
+            "label": "rain gardens",
+            "color": "#74c476"
+          },
+          {
+            "rest": true,
+            "_labelNote": "REB-452. The catch-all holds 815 assets citywide: 384 underground storage, 277 porous paving, 132 roofs, 11 tree pits, 11 mixed. 'Green infrastructure' is the sector word for this and is banned in resident-facing copy (LANGUAGE.md).",
+            "_labelUnusedNote": "18 August: `label` below is no longer read for this kind. It used to be the ONE line a `rest` bucket rendered as ('2 storage, porous paving and roofs'), which reads as '2 of each' — Judy's catch. `greenKindsFrom` in js/citydata.js now emits one line per DEP asset_type actually present in the radius (Socrata's own asset_type string, lowercased, e.g. 'green roof', 'permeable pavers'), each with its own count, using only `color` from this entry. Kept as documentation of the family this bucket represents, not as live copy — do not assume it renders.",
+            "label": "storage, porous paving and roofs",
+            "color": "#a1d99b"
+          }
+        ],
+        "field": "asset_type"
+      },
+      "sensors": {
+        "url": "https://data.cityofnewyork.us/resource/kb2e-tjy3.json",
+        "eventsUrl": "https://data.cityofnewyork.us/resource/aq7i-eu5q.json",
+        "_note": "FloodNet. Read from the precomputed overlay, not live: scripts/build-floodnet.mjs joins these two and writes overlays/floodnet.json. These URLs are here so the build script and the About panel cite the same sources the rest of cityData does.",
+        "overlay": "overlays/floodnet.json",
+        "_colorNote": "18 August, Judy: sync with the map. FloodNet draws as black diamonds there on purpose (Judy's standing call, 'no colour key, the toolbar is helpful enough') — #111111 is the exact value overlays.layers' floodnet entry already uses for its own Map Layers panel swatch. This field only ever fed this one half-mile-panel dot (the map's own sensor markers are a separate, unaffected code path in map.js), so there was nothing else this could clash with.",
+        "color": "#111111",
+        "label": "FloodNet sensors",
+        "_nounNote": "19 August, Judy: say FloodNet, not 'city flood sensors'. FloodNet is a named research network, and the vague version left a reader unable to look it up or tell it apart from a 311 report.",
+        "noun": [
+          "FloodNet sensor",
+          "FloodNet sensors"
+        ],
+        "_measureNote": "Ultrasonic depth sensors, not cameras. The published data carries no imagery. Say 'measured', never 'reported' — that verb belongs to 311.",
+        "neverLabel": "installed, but has not measured flooding yet",
+        "tidalNote": "This one sits where the tide reaches, so it can measure water that is not rain."
+      },
+      "gap": {
+        "minReports": 100,
+        "ratio": 25,
+        "label": "People report flooding here a lot.",
+        "note": "But almost nothing has been built nearby to soak up the rain."
+      }
+    },
+    "storySchema": {
+      "_storyColourNote": "REB-468. ONE colour represents a story everywhere: map pin, side-pane tile, card raindrop, card label, detail header, submission form, admin. It is #154f9f, picked by measurement against the new basemap. At the old #2db4d9 a pin sat only DeltaE 2.1 from the 2100 flood layer over water, which is invisible, and its white glyph was 2.43:1. At #154f9f the worst separation anywhere on the map is DeltaE 14.1 and the glyph is 7.92:1. Hover and selection go to the brand blue #2db4d9 with white text and glyph. That is Judy's call: white there is 2.43:1 and she has decided it repeatedly with the number in front of her, so do not quietly change it back. The filter buttons keep their own green in filterColor and must NOT follow this.",
+      "pinColor": "#154f9f",
+      "pinColorDeep": "#154f9f",
+      "pinColorText": "#154f9f",
+      "pinColorTile": "#154f9f",
+      "pinColorTileActive": "#2db4d9",
+      "_filterColourNote": "REB-468. The Category / Event / Year / Area buttons. Judy: too much blue on the sidepane. Deliberately not a story colour, and deliberately no longer sharing a token with the tiles, which is what it used to do: when the tile hover colour changed, the filter row would have silently changed with it. Dark ink on this green is 5.85:1.",
+      "filterColor": "#3eb094",
+      "roles": {
+        "color": "type",
+        "text": "story",
+        "filter": "category",
+        "locationLabel": "neighborhood",
+        "event": "event"
+      },
+      "fields": [
+        {
+          "id": "tenure",
+          "kind": "select-chips",
+          "step": "story",
+          "internal": true,
+          "hidden": true,
+          "_hiddenNote": "18 August 2026, Judy: hidden on tester feedback that less is more. Left in the schema, not deleted, so restoring it is dropping this flag.",
+          "label": "I am a…",
+          "hint": "Renters, owners and businesses face different flood risks, so this helps match your story to the right solutions.",
+          "options": [
+            {
+              "id": "renter",
+              "label": "Renter"
+            },
+            {
+              "id": "homeowner",
+              "label": "Homeowner"
+            },
+            {
+              "id": "business",
+              "label": "Business owner"
+            },
+            {
+              "id": "visitor",
+              "label": "Visitor"
+            },
+            {
+              "id": "other",
+              "label": "Something else"
+            }
+          ],
+          "retiredOptions": [
+            {
+              "id": "nycha",
+              "label": "Public housing (NYCHA)"
+            }
+          ]
+        },
+        {
+          "id": "type",
+          "kind": "choice",
+          "label": "Story Type",
+          "legendTitle": "Story Types",
+          "required": true,
+          "_retiredNote": "19 August, the director: \"I have a question about flooding\" is off the form, the filters, the legend and the chart, because it is not in `options`. It is here so the one approved story still carrying it keeps its label instead of reading \"No kind given\", and so opening that story in the admin editor cannot silently erase its type. Delete this once no story answers `future` (check: stories?select=answers).",
+          "retiredOptions": [
+            {
+              "id": "future",
+              "label": "I have a question about flooding",
+              "shortLabel": "Has a question",
+              "icon": "question"
+            }
+          ],
+          "options": [
+            {
+              "id": "experience",
+              "_shortLabelNote": "REB-522. The findings panel tabulates types in a bar chart whose label column is 150px, where \"I have a question about flooding\" cannot fit, and writes a headline naming the commonest one. `shortLabel` is the chart label; `findingPhrase` completes \"N of M stories ...\" so the sentence reads whichever type leads. They fall back to `label` and to no headline respectively.",
+              "shortLabel": "Experienced flooding",
+              "findingPhrase": "describe flooding the person experienced",
+              "label": "I experienced flooding",
+              "emoji": "",
+              "color": "#FD2A37",
+              "gradient": [
+                "#FF7043",
+                "#E64A19"
+              ],
+              "tint": "#FFE5E7",
+              "ink": "#CE202B",
+              "icon": "wave",
+              "_colorWas": "#FD2A37"
+            },
+            {
+              "id": "community",
+              "shortLabel": "Community taking action",
+              "findingPhrase": "describe a community taking action",
+              "label": "My community is taking action",
+              "emoji": "",
+              "color": "#12CB76",
+              "gradient": [
+                "#10B981",
+                "#059669"
+              ],
+              "tint": "#E3F9EF",
+              "ink": "#078048",
+              "icon": "plant",
+              "_colorWas": "#12CB76"
+            },
+            {
+              "id": "idea",
+              "shortLabel": "Has an idea",
+              "findingPhrase": "share an idea",
+              "label": "I have an idea",
+              "emoji": "",
+              "color": "#FB942A",
+              "gradient": [
+                "#F59E0B",
+                "#D97706"
+              ],
+              "tint": "#FFF2E5",
+              "ink": "#A35E17",
+              "icon": "bulb",
+              "_colorWas": "#FB942A"
+            }
+          ]
+        },
+        {
+          "id": "event",
+          "kind": "select",
+          "step": "story",
+          "label": "When It Happened",
+          "placeholder": "Select a Storm",
+          "hint": "Pick the storm, or give the exact date, whichever you know.",
+          "options": [
+            {
+              "id": "jun2026",
+              "year": 2026,
+              "label": "June 2026 cloudburst"
+            },
+            {
+              "id": "ophelia",
+              "year": 2023,
+              "label": "Tropical Storm Ophelia (Sept 2023)"
+            },
+            {
+              "id": "elliott",
+              "year": 2022,
+              "label": "Winter Storm Elliott (Dec 2022)"
+            },
+            {
+              "id": "ida",
+              "year": 2021,
+              "label": "Hurricane Ida (Sept 2021)"
+            },
+            {
+              "id": "henri",
+              "year": 2021,
+              "label": "Tropical Storm Henri (Aug 2021)"
+            },
+            {
+              "id": "elsa",
+              "year": 2021,
+              "label": "Tropical Storm Elsa (July 2021)"
+            },
+            {
+              "id": "isaias",
+              "year": 2020,
+              "label": "Tropical Storm Isaias (Aug 2020)"
+            },
+            {
+              "id": "sandy",
+              "year": 2012,
+              "label": "Superstorm Sandy (Oct 2012)"
+            },
+            {
+              "id": "other",
+              "label": "Another storm or not sure"
+            }
+          ]
+        },
+        {
+          "id": "story_date",
+          "kind": "date",
+          "step": "story",
+          "inlineWith": "event",
+          "label": "Exact Date"
+        },
+        {
+          "id": "story",
+          "kind": "longtext",
+          "label": "Your Story",
+          "required": true,
+          "maxLength": 5000,
+          "placeholder": ""
+        },
+        {
+          "id": "category",
+          "kind": "select-chips",
+          "multi": true,
+          "label": "Tags",
+          "hint": "Pick any that fit, so people can find stories like yours.",
+          "options": [
+            {
+              "id": "flash",
+              "label": "Street Flooding"
+            },
+            {
+              "id": "basement",
+              "label": "Basement Flooding"
+            },
+            {
+              "id": "sewer",
+              "label": "Sewer Backup"
+            },
+            {
+              "id": "damage",
+              "label": "Damage & Loss"
+            },
+            {
+              "id": "transit",
+              "label": "Getting Around"
+            },
+            {
+              "id": "housing",
+              "label": "Housing & Displacement"
+            },
+            {
+              "id": "green",
+              "label": "Soaking Up Rain"
+            },
+            {
+              "id": "stewardship",
+              "label": "Community Action"
+            },
+            {
+              "id": "prepared",
+              "label": "Preparedness"
+            },
+            {
+              "id": "policy",
+              "label": "Policy & Funding"
+            }
+          ]
+        },
+        {
+          "id": "neighborhood",
+          "kind": "shorttext",
+          "suggest": "places",
+          "hint": "Start typing, or search your address above and we'll fill it in.",
+          "label": "Neighborhood",
+          "placeholder": "e.g. Red Hook, Brooklyn",
+          "step": "location"
+        }
+      ],
+      "_pinNote": "REB-455. Every story pin is one Rainproof blue and the TYPE is carried by a white glyph, not by hue. Option `color` is retained because it still tints small non-pin affordances; `icon` is what the map and the side pane read."
+    },
+    "form": {
+      "groups": {
+        "about": "About You",
+        "where": "Where It Happened",
+        "type": "Story Type",
+        "story": "What Happened",
+        "tags": "Tags",
+        "media": "Media to Support It"
+      },
+      "steps": {
+        "story": {
+          "title": "Where and who",
+          "sub": "Tell us where it happened, then tell us about it."
+        },
+        "media": {
+          "title": "Media",
+          "sub": "Photos, video, a voice recording, or a document. Up to 5 files, with 2 videos of 5 minutes each."
+        },
+        "location": {
+          "title": "Your Location",
+          "sub": "Help us understand where this happened."
+        },
+        "about": {
+          "title": "Your details and how you appear",
+          "sub": "Fill in your details, then choose how your story appears. We need an email to follow up; your contact details are never public unless you ask for them to be."
+        }
+      },
+      "media": {
+        "photo": true,
+        "video": true,
+        "audio": true,
+        "document": true,
+        "maxItems": 5,
+        "maxPerKind": {
+          "video": 2
+        },
+        "processingWarning": "Please keep this page open and stay in the app — leaving will stop it.",
+        "videoHint": "Up to 5 minutes each",
+        "audioHint": "Tell your story out loud — up to 10 minutes",
+        "privacyNote": "We shrink photos and video on your phone before sending, and remove the location tag your camera adds to photos.",
+        "limits": {
+          "photoMaxEdge": 1600,
+          "photoQuality": 0.82,
+          "thumbMaxEdge": 1000,
+          "thumbQuality": 0.8,
+          "maxUploadBytes": 104857600,
+          "videoMaxEdge": 1280,
+          "videoBitsPerSecond": 1800000,
+          "videoMinBitsPerSecond": 500000,
+          "videoMaxSeconds": 300,
+          "audioMaxSeconds": 600,
+          "audioMaxBytes": 31457280
+        }
+      },
+      "location": {
+        "enabled": true,
+        "inStory": true,
+        "label": "Address, Neighborhood or Landmark",
+        "required": true,
+        "hint": "This is what puts your story on the map."
+      },
+      "contactHint": "Only so Rebuild by Design can follow up. Never shared publicly.",
+      "reachback": {
+        "label": "Let neighbors and organizers reach me about this story",
+        "hint": "Optional, and separate from the private contact above. This one is shown publicly on your story.",
+        "placeholder": "Public contact: email, phone, or @handle",
+        "warn": "Anyone who sees your story on the map can see this. Only share what you’re comfortable making public.",
+        "chat": "Want neighbors and organizers to be able to reach you about this story? You can add a public contact, shown on your story for anyone who sees it. It’s separate from the private details above, and optional."
+      }
+    },
+    "kiosk": {
+      "headline": "Has flooding touched your life in NYC?",
+      "sub": "Tell us in about two minutes. Your story joins hundreds of others making the case for a rainproof city, and you choose how your name appears, or whether it appears at all.",
+      "start": "Tap to share your story"
+    },
+    "consent": {
+      "question": "Sign It",
+      "order": ["full_name", "first_name", "anonymous"],
+      "previewLead": "Appears as",
+      "anonymousLabel": "{neighborhood} Resident",
+      "levels": {
+        "full_name": { "label": "Full Name" },
+        "first_name": { "label": "First Name Only" },
+        "anonymous": { "label": "{neighborhood} Resident" }
+      },
+      "agreement": "By submitting, you agree your story may appear on this public map as part of Rebuild by Design's Rainproof NYC initiative, with the visibility you chose above. You can request removal at any time.",
+      "privacy": {
+        "heading": "What Happens to Your Story",
+        "summary": "It goes on a public map after the team reads it. Your pin is rounded to a block, photos have their location data stripped, and your contact details are never published.",
+        "points": [
+          "Your story, the pin you place and any photos, video or audio you add are published on a public map once the Rainproof team has read them, and Rebuild by Design may also use them on its website. Anyone can see them.",
+          "Your pin is rounded to about a block before it is saved. We never publish an exact address, and we never keep the exact spot your phone gave us.",
+          "Photos have their hidden location data removed before they are uploaded.",
+          "Your name and email are only so the team can reach you about your story. They are never published and never sold.",
+          "The map is hosted on GitHub. Stories and photos are stored with Supabase on an account paid for by Rebuild by Design. Only named Rainproof staff can sign in and read submissions.",
+          "You can ask us to fix or take down your story at any time, and we will."
+        ],
+        "checkbox": "I have read this. I agree my story, my pin and any photos, video or audio I add can be published on a public map and used by Rebuild by Design on its website.",
+        "error": "Please tick the box to say you agree your story can be published.",
+        "linkLabel": "Read the full privacy notice",
+        "linkHref": "privacy.html",
+        "contactLead": "Questions, corrections or removals:"
+      }
+    },
+    "cta": {
+      "share": "Share Your Story",
+      "submit": "Send My Story",
+      "successTitle": "Thanks for submitting your story!",
+  "successBody": "A moderator reads every story before it goes on the map, usually within a few days.",
+  "successEmail": "We will email you at {email} when yours is published, or if we need to check something with you first.",
+  "successRefLead": "Your story reference is"
+    },
+    "feed": {
+      "title": "Flood Stories from New Yorkers",
+      "emptyText": "No stories yet in this category.",
+      "addressHint": "Search an address to see flooding, green infrastructure and FloodNet sensors within a 10 minute walk, or share your story there."
+    },
+    "about": {
+      "title": "About the Rainproof NYC Flood Map",
+      "lead": "An ongoing public record of flooding, action, and ideas, shared by New Yorkers for New Yorkers.",
+      "_note": "The director's approved language, 19 August, replacing the 12 August narrative (REB-484). Copied as approved. Two things to know. The two 'Five years after Ida | ...' headings carry the pipe because that is how the approved doc wrote them; if the prefix was a section marker in that doc rather than part of the heading, delete it here and nowhere else. And the Ida death toll now reads 13 where the previous copy said fourteen — the approved text is what is published.",
+      "_removedNote": "The old credit line 'Map created by Judy Huynh, Data and GIS Analyst at Rebuild by Design.' is not in the approved text, so it is not rendered. Kept here so restoring it is a paste. `linkName` was 'Rebuild by Design'.",
+      "sections": [
+        {
+          "h": "Five years after Ida | Hurricane Ida: A Pivotal Moment for NYC",
+          "p": "On September 1st, 2021, the remnants of Hurricane Ida dropped more than three inches of rain on New York City in a single hour, a record at the time. NYC tragically lost 13 lives. The storm revealed that every neighborhood in New York City could flood. To respond, Rebuild by Design launched Rainproof NYC, an initiative to bring New Yorkers together to turn the concrete jungle into a sponge."
+        },
+        {
+          "h": "Introducing the Rainproof NYC Flood Map",
+          "p": "The Rainproof NYC Flood Map combines personal narrative with publicly available flood data to create a more comprehensive picture of the extent of flood impacts across NYC. The map provides a platform for New Yorkers to share their experiences with heavy rainfall, identify flood risk in their neighborhoods, showcase community-led actions, and generate new ideas for addressing the challenge."
+        },
+        {
+          "h": "Why should I add my story?",
+          "p": "New York City’s understanding of where it floods is largely derived from triangulating 311 data with 450 flood sensors; however, we know that not everyone calls 311 and most blocks do not have sensors, leaving many flooding experiences undocumented.\n\nStories of lived experience fill in the gaps that data misses. Documenting community stories in a publicly accessible map helps create proof that elected officials and city agencies can’t ignore. This map will become a tool to advocate for the infrastructure and resources needed neighborhood-by-neighborhood, and to spotlight the solutions communities are already building."
+        },
+        {
+          "h": "HOW TO SHARE YOUR STORY!",
+          "p": "We want to hear your stories of:",
+          "list": [
+            {
+              "label": "Flooding:",
+              "text": " Your experience during a rain event"
+            },
+            {
+              "label": "Actions:",
+              "text": " What you or your community have done to prepare for, respond to, or recover from flooding."
+            },
+            {
+              "label": "Asks:",
+              "text": " What you or your neighborhood need right now to be ready for the next storm."
+            },
+            {
+              "label": "Ideas:",
+              "text": " A new solution or approach you’d like to see in your neighborhood."
+            }
+          ],
+          "p2": "To share your story:",
+          "list2": [
+            {
+              "label": "Pin your story on the map!",
+              "text": " You can press the “Share your Story” button or click anywhere on the map to add your flooding experience, action, or idea."
+            },
+            {
+              "label": "Write your story:",
+              "text": " Share as much or as little as feels right. Whether it was a puddle in your hallway or a flood in your basement — every experience helps build the bigger picture."
+            },
+            {
+              "label": "Optional:",
+              "text": " Upload a photo, video, or record audio of your story documenting the experience."
+            },
+            "Submit your story for moderator approval"
+          ],
+          "link": {
+            "before": "For more guidance on the map, visit: ",
+            "label": "Rainproof.nyc",
+            "url": "https://rainproof.nyc/"
+          }
+        }
+      ],
+      "_removedResource": {
+        "label": "Everyone has a role to play",
+        "hint": "What to do before, during and after a storm: check your risk, get alerts, document flooding, and find help afterwards.",
+        "url": "https://rebuildbydesign.org/rainproof-everyone-has-a-role-to-play/",
+        "_note": "Judy: this is the place for resources, and it is why the About panel can stop short of offering help itself. The page is a practical guide organised before / during / after a storm, plus ways to stay involved — FloodHelp NY, Notify NYC, FloodNet, MyCoast, FEMA and Red Cross among them. The map asks somebody to describe a bad day; this is what it can honestly offer them afterwards."
+      },
+      "_removedResourceNote": "Judy, 19 August: the 'Everyone has a role to play' card is out of About. Kept above so putting it back is renaming the key to `resource`.",
+"credits": {
+        "h": "Thank you to our Partners!",
+        "partnerLead": "This map was made in collaboration with our Rainproof Your Community partners:",
+        "dataLine": "Data Credits: Refer to",
+        "dataLinkLabel": "Methodology",
+        "_note": "`dataLine` renders with the label after it as a link to the same panel the header's Methodology button opens, so the word means one thing in both places. Partner URLs are unchanged and were checked in a browser when they were added; a partner with no `url` renders as plain text.",
+        "partners": [
+          {
+            "name": "Brooklyn Level Up",
+            "url": "https://bklvlup.org/"
+          },
+          {
+            "name": "Nonprofit Staten Island",
+            "url": "https://nonprofitstatenisland.org/"
+          },
+          {
+            "name": "Rainproof Flatbush",
+            "url": "https://www.cxsebrooklyn.org/",
+            "_note": "Rainproof Flatbush is the PROJECT; the organisation running it is Central x South East Brooklyn CDC, which is whose site this is. Judy's list gave the project name, so that is what is credited — say if the org should be named instead."
+          },
+          {
+            "name": "SQREJC",
+            "url": "https://www.sqrejc.org/",
+            "_note": "Southeast Queens Residents Environmental Justice Coalition. The initials are what Judy supplied and what the coalition uses itself."
+          },
+          {
+            "name": "The City Sponge",
+            "url": "https://thecitysponge.com/"
+          },
+          {
+            "name": "The Dear Neighbor Project",
+            "url": "https://dearneighborproject.com/"
+          }
+        ]
+      },
+      "orgs": {
+        "items": [
+          {
+            "h": "About Rainproof NYC (led by Rebuild by Design)",
+            "p": "Rebuild by Design works with communities and local governments to solve environmental and economic challenges. Our work centers people through data, design, community outreach, research, education, and policy to co-create solutions that strengthen infrastructure and protect lives and livelihoods.\n\nRainproof NYC is Rebuild by Design’s citywide initiative, launched in partnership with One Architecture & Urbanism, to address increasingly heavy rainfall and flash floods. Since the day after Hurricane Ida, we’ve been combining research, global inspiration, and hands-on collaboration to transform NYC into a sponge. The growing Rainproof NYC network brings together community groups, city officials, technical experts, policy advocates, private sector partners, educators, and more to understand and address flooding in NYC.",
+            "link": {
+              "before": "To join us in rainproofing our city, send us an email at info@rebuildbydesign.org or visit ",
+              "label": "rainproof.nyc",
+              "url": "https://rainproof.nyc/"
+            }
+          }
+        ]
+      }
+    },
+    "areas": [
+      "Battery Park City, Manhattan",
+      "Chelsea, Manhattan",
+      "Chinatown, Manhattan",
+      "East Harlem, Manhattan",
+      "East Village, Manhattan",
+      "Financial District, Manhattan",
+      "Greenwich Village, Manhattan",
+      "Harlem, Manhattan",
+      "Hell's Kitchen, Manhattan",
+      "Inwood, Manhattan",
+      "Lower East Side, Manhattan",
+      "Midtown, Manhattan",
+      "Morningside Heights, Manhattan",
+      "Murray Hill, Manhattan",
+      "SoHo, Manhattan",
+      "Tribeca, Manhattan",
+      "Upper East Side, Manhattan",
+      "Upper West Side, Manhattan",
+      "Washington Heights, Manhattan",
+      "Bay Ridge, Brooklyn",
+      "Bedford-Stuyvesant, Brooklyn",
+      "Bensonhurst, Brooklyn",
+      "Brooklyn Heights, Brooklyn",
+      "Brownsville, Brooklyn",
+      "Bushwick, Brooklyn",
+      "Canarsie, Brooklyn",
+      "Carroll Gardens, Brooklyn",
+      "Coney Island, Brooklyn",
+      "Crown Heights, Brooklyn",
+      "DUMBO, Brooklyn",
+      "East New York, Brooklyn",
+      "Flatbush, Brooklyn",
+      "Fort Greene, Brooklyn",
+      "Gowanus, Brooklyn",
+      "Greenpoint, Brooklyn",
+      "Park Slope, Brooklyn",
+      "Prospect Heights, Brooklyn",
+      "Red Hook, Brooklyn",
+      "Sunset Park, Brooklyn",
+      "Williamsburg, Brooklyn",
+      "Astoria, Queens",
+      "Corona, Queens",
+      "Elmhurst, Queens",
+      "Far Rockaway, Queens",
+      "Flushing, Queens",
+      "Forest Hills, Queens",
+      "Jackson Heights, Queens",
+      "Jamaica, Queens",
+      "Long Island City, Queens",
+      "Rego Park, Queens",
+      "Ridgewood, Queens",
+      "Sunnyside, Queens",
+      "Woodside, Queens",
+      "Concourse, Bronx",
+      "Fordham, Bronx",
+      "Hunts Point, Bronx",
+      "Mott Haven, Bronx",
+      "Pelham Bay, Bronx",
+      "Riverdale, Bronx",
+      "South Bronx, Bronx",
+      "Throggs Neck, Bronx",
+      "Great Kills, Staten Island",
+      "Midland Beach, Staten Island",
+      "New Dorp, Staten Island",
+      "St. George, Staten Island",
+      "Stapleton, Staten Island",
+      "Tottenville, Staten Island"
+    ],
+    "method": {
+      "title": "How this map works",
+      "lead": "What's on this map, where it comes from, and when we last pulled it.",
+      "sections": [
+        {
+          "h": "How the numbers are made",
+          "p": "Everything is counted from Sept 1, 2021, the night of Hurricane Ida. Reports are counted by census block — the blocks the Census Bureau and the city both use, bounded by the streets you walk — so one address calling ten times is not ten places that flood. Around an open story we count what is within half a mile, which is roughly a ten minute walk."
+        },
+        {
+          "h": "What this does not show",
+          "_pNote": "REB-458. The 311-delay sentence moved here from the place card, where it was one of three caveats delivered before the reader had asked anything. It deliberately states no number of days: that figure was measured once at seven and was twelve five days later. The computed date block directly above says where the record stopped, which is the same fact and cannot go stale.",
+          "p": "311 records who called, not where it flooded, so a quiet block may be an unreported one. 311 also publishes on a delay, so the newest days are always missing — the dates above are where the record stopped when we last pulled it. Sewer upgrades are not in this data, so nothing built nearby is not nothing done nearby. And counts rise and fall with how much it rained, so a quieter year is not a safer one."
+        }
+      ],
+      "sources": [
+        {
+          "h": "Flooding reported to 311",
+          "p": "NYC 311 Service Requests. Three kinds: water sitting on streets, storm drains blocked so water can't get away, and sewage or water backing up into homes and basements."
+        },
+        {
+          "h": "Flooding measured by sensors",
+          "p": "FloodNet, a network of ultrasonic depth sensors on street poles run by NYU and CUNY. They record how deep the water gets. There are no cameras in this network."
+        },
+        {
+          "h": "Things built to soak up rain",
+          "p": "NYC Department of Environmental Protection. Rain gardens, basins under the pavement, planted strips, porous paving, green roofs and underground storage, counting what is built rather than what is planned."
+        },
+        {
+          "h": "Flood risk, now and 2100",
+          "p": "EJNYC. Areas that flood when it rains hard today, and areas expected to flood by 2100 as the sea rises."
+        },
+        {
+          "h": "Neighborhoods",
+          "p": "The city's NTA 2020 areas. A pin's neighborhood is worked out on your own device, so no location is sent anywhere to name it."
+        }
+      ],
+      "sourcesHeading": "Where the data comes from",
+      "currencyAfter": "How the numbers are made",
+      "methodPanel": {
+        "_note": "REB-453 round two, Judy 19 August: the dictionary was too technical for a resident. This replaces it as what the Methodology button opens. One card per MAP LAYER, in the order the Map Layers panel lists them, saying four things and nothing else: what the layer is, who publishes it, when it was last pulled, what we filtered. Order is COMPUTED from overlays.groups and overlays.layers, not written here, so a layer added to the map cannot go missing from the panel. Dates are read from each overlay's own meta.built at render time and are never typed. Keyed by layer id; the four 311 ids share one `card` value so that group prints once.",
+        "eyebrow": "Methodology",
+        "title": "Where this data comes from",
+        "lead": "The Rainproof map is built from the layers below, listed in the order they appear in Map Layers. Each entry gives the source, the date it was last pulled, and what was filtered.",
+        "layers": {
+          "current": {
+            "what": "Where flooding is expected today: FEMA's 100-year floodplain and the wider 500-year area, together with the streets DEP's model shows flooding in heavy rain. All of it is drawn as one outline.",
+            "publisher": "NYC Mayor's Office of Climate and Environmental Justice, EJNYC report. Source data: FEMA storm surge floodplain (2020) and DEP Stormwater Flood Map (2020).",
+            "dateLabel": "Last built"
+          },
+          "f2100": {
+            "what": "Where flooding is expected by 2100: storm surge reaching further inland on a higher sea, the land expected to sit below the daily high tide line, and the streets DEP's model shows flooding in heavy rain once sea levels rise. All of it is drawn as one outline.",
+            "publisher": "NYC Mayor's Office of Climate and Environmental Justice, EJNYC report. Source data: NPCC3 storm surge projection (2100) and DEP Stormwater Flood Map, future scenario (2080 sea levels).",
+            "dateLabel": "Last built"
+          },
+          "flood_street": {
+            "card": "c311",
+            "dateFrom": "cityFacts",
+            "name": "Flooding reported to 311",
+            "what": "Flooding reports made to 311 since Sept 1, 2021.",
+            "publisher": "NYC Department of Information Technology and Telecommunications, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "311 Service Requests",
+                "id": "erm2-nwe9"
+              }
+            ],
+            "_filteredNote": "19 August audit: this said 'counted by 2020 census block', which is the unit the FINDINGS use, not this layer. scripts/rebuild-flood311-from-cache.py rounds each report to 3 decimal places and counts the cells, and it calls those cells `blocks` in its own log, which is where the confusion came from. About 110 metres at this latitude.",
+            "filtered": "Four descriptors included, one per layer: Street Flooding (SJ), Catch Basin Clogged/Flooding (SC), Excessive Water In Basement (WEFB), Sewer Backup (SA). Records without coordinates excluded. Remaining records grouped to a 110-metre grid."
+          },
+          "flood_basin": {
+            "card": "c311",
+            "dateFrom": "cityFacts",
+            "name": "Flooding reported to 311",
+            "what": "Flooding reports made to 311 since Sept 1, 2021.",
+            "publisher": "NYC Department of Information Technology and Telecommunications, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "311 Service Requests",
+                "id": "erm2-nwe9"
+              }
+            ],
+            "_filteredNote": "19 August audit: this said 'counted by 2020 census block', which is the unit the FINDINGS use, not this layer. scripts/rebuild-flood311-from-cache.py rounds each report to 3 decimal places and counts the cells, and it calls those cells `blocks` in its own log, which is where the confusion came from. About 110 metres at this latitude.",
+            "filtered": "Four descriptors included, one per layer: Street Flooding (SJ), Catch Basin Clogged/Flooding (SC), Excessive Water In Basement (WEFB), Sewer Backup (SA). Records without coordinates excluded. Remaining records grouped to a 110-metre grid."
+          },
+          "flood_homes": {
+            "card": "c311",
+            "dateFrom": "cityFacts",
+            "name": "Flooding reported to 311",
+            "what": "Flooding reports made to 311 since Sept 1, 2021.",
+            "publisher": "NYC Department of Information Technology and Telecommunications, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "311 Service Requests",
+                "id": "erm2-nwe9"
+              }
+            ],
+            "_filteredNote": "19 August audit: this said 'counted by 2020 census block', which is the unit the FINDINGS use, not this layer. scripts/rebuild-flood311-from-cache.py rounds each report to 3 decimal places and counts the cells, and it calls those cells `blocks` in its own log, which is where the confusion came from. About 110 metres at this latitude.",
+            "filtered": "Four descriptors included, one per layer: Street Flooding (SJ), Catch Basin Clogged/Flooding (SC), Excessive Water In Basement (WEFB), Sewer Backup (SA). Records without coordinates excluded. Remaining records grouped to a 110-metre grid."
+          },
+          "flood_sewer": {
+            "card": "c311",
+            "dateFrom": "cityFacts",
+            "name": "Flooding reported to 311",
+            "what": "Flooding reports made to 311 since Sept 1, 2021.",
+            "publisher": "NYC Department of Information Technology and Telecommunications, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "311 Service Requests",
+                "id": "erm2-nwe9"
+              }
+            ],
+            "_filteredNote": "19 August audit: this said 'counted by 2020 census block', which is the unit the FINDINGS use, not this layer. scripts/rebuild-flood311-from-cache.py rounds each report to 3 decimal places and counts the cells, and it calls those cells `blocks` in its own log, which is where the confusion came from. About 110 metres at this latitude.",
+            "filtered": "Four descriptors included, one per layer: Street Flooding (SJ), Catch Basin Clogged/Flooding (SC), Excessive Water In Basement (WEFB), Sewer Backup (SA). Records without coordinates excluded. Remaining records grouped to a 110-metre grid."
+          },
+          "floodnet": {
+            "what": "Ultrasonic sensors on street poles that record water depth.",
+            "publisher": "FloodNet, operated by NYU and CUNY, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "Sensors",
+                "id": "kb2e-tjy3"
+              },
+              {
+                "label": "Flood events",
+                "id": "aq7i-eu5q"
+              }
+            ],
+            "filtered": "Sensor and flood event datasets joined on sensor ID. Removed sensors excluded, along with their recorded events. Sensors with no recorded flood events included."
+          },
+          "greeninfra": {
+            "chips": [
+              { "label": "Built", "color": "#0f7f12" },
+              { "label": "In design or under construction", "color": "#5ee161" }
+            ],
+            "what": "DEP green infrastructure assets, including rain gardens, permeable paving, infiltration basins, subsurface storage and green roofs.",
+            "publisher": "NYC Department of Environmental Protection, via NYC Open Data.",
+            "datasets": [
+              {
+                "label": "DEP Green Infrastructure",
+                "id": "df32-vzax"
+              }
+            ],
+            "_filteredNote": "19 August audit, Judy: this was wrong. It said assets in design or under construction were removed. They are NOT removed from the layer: scripts/build-persistence.mjs fetches with `where: null` and writes a status column, so the overlay carries 13,959 constructed and 2,272 in progress, drawn in two greens. status_gro='Constructed' is the filter on the COUNTS (the half-mile panel and the findings), not on the layer. Two different things that one sentence claimed were one.",
+            "filtered": "No records excluded. Assets are shown by construction status: built, or in design or under construction. Counts elsewhere on this map include built assets only."
+          },
+          "council": {
+            "what": "New York City Council district boundaries.",
+            "publisher": "NYC Department of City Planning.",
+            "filtered": "No records excluded."
+          },
+          "community": {
+            "what": "Community district boundaries.",
+            "publisher": "NYC Department of City Planning.",
+            "filtered": "No records excluded."
+          },
+          "neighborhoods": {
+            "_groupNote": "19 August, Judy: file it under Boundaries. The layer is panelHidden and so has no group of its own, and it lands after Council and Community in the orphan pass, which puts it under that heading without printing a second one.",
+            "group": "Boundaries",
+            "what": "2020 Neighborhood Tabulation Areas, the city's standard neighborhood geography.",
+            "publisher": "NYC Department of City Planning.",
+            "filtered": "No records excluded. Neighborhood matching is done in the browser."
+          }
+        }
+      },
+      "_dictionaryNote": "REB-453. Only what CANNOT be computed lives here. The dataset id, the endpoint, the exact filter, the window, the counts and the build date are all read at render time from cityData and from the overlay meta blocks, because those are the things that drift. If you find yourself typing a number into this block, it belongs in the overlay's meta instead.",
+      "dictionary": {
+        "linkLabel": "Full data dictionary",
+        "linkHint": "Dataset ids, filters and windows, precise enough to re-run",
+        "_unrenderedNote": "NOTHING RENDERS THIS BLOCK as of 19 August. `method.methodPanel` replaced it as what the Methodology button opens. Kept because it is the only written record of the endpoint, filter and delivery-model answers a replicator needs, and deleting it is a separate deliberate pass. Its wording is kept in step with the live panel so a future reader is never reading two different vocabularies for one dataset.",
+          "title": "Data dictionary",
+        "lead": "Every dataset behind this map, named precisely enough that you can go to the source and reproduce any figure on it.",
+        "freshness": {
+          "h": "Two different freshness stories on one page",
+          "p": "Three different things, and it is worth knowing which you are looking at. The citywide findings are a FIXED SNAPSHOT, pulled on one stated date and deliberately not refreshed, so a figure quoted from this map still reads true months later. The map layers are frozen files rebuilt once a week by a scheduled job, so the shading can be newer than the findings. And the numbers beside an open story are neither: those are counted live from NYC Open Data the moment you open it. All three are stated with their own date, and a difference between them is the system working rather than a fault."
+        },
+        "datasets": [
+          {
+            "id": "complaints",
+            "name": "311 Service Requests from 2010 to Present",
+            "publisher": "NYC Open Data, Department of Information Technology and Telecommunications",
+            "unit": "One row is one report to 311. Ten reports about the same corner are ten rows, which is why every figure counts census blocks rather than reports.",
+            "excludes": "Rows with no coordinates. Any descriptor other than the four listed. Anything before the window opens.",
+            "delivery": "both"
+          },
+          {
+            "id": "green",
+            "name": "DEP Green Infrastructure",
+            "publisher": "NYC Open Data, Department of Environmental Protection",
+            "unit": "One row is one built asset, not one project. The assets on this map belong to roughly 492 projects, so counting them as projects would oversell the number about 28 times over.",
+            "excludes": "Anything not built. The filter keeps status_gro='Constructed' only, which drops assets that are designed, in construction or planned.",
+            "delivery": "both",
+            "note": "The layer is named for what it holds rather than for its three biggest families. Every asset type in it is listed below."
+          },
+          {
+            "id": "sensors",
+            "name": "FloodNet flood sensors and flood events",
+            "publisher": "NYC Open Data, published for FloodNet, a network run by NYU and CUNY",
+            "unit": "One row is one sensor, joined to its own recorded flood events. Two datasets, joined at build time, because the useful answer needs both and the portal cannot join them in one request.",
+            "excludes": "Nothing is filtered out. Sensors that have never measured flooding are kept and counted, because a quiet sensor is usually a new one and dropping them would make the network look wetter than it is.",
+            "delivery": "frozen",
+            "note": "64 tidal sensors are 13% of the network and carry about 70% of every flood event in it. Any total taken from this dataset without saying so is measuring the tide."
+          },
+          {
+            "id": "flood_extent",
+            "name": "Predicted flooding: stormwater and storm surge",
+            "publisher": "NYC Mayor's Office of Climate and Environmental Justice (EJNYC report), combining DEP's Stormwater Flood Map with FEMA's floodplain for today and the NPCC3 2100 storm surge projection for the future scenario",
+            "unit": "One row is one polygon. These are MODELLED areas, not observations, and nothing on this map is counted from them. Two hazards are unioned into each layer: stormwater, meaning rain that cannot drain away, and storm surge, meaning water pushed in from the sea.",
+            "excludes": "Nothing is filtered out. But the two years are not the same product: the 2100 stormwater scenario carries a DEP flooding category (future high tides) that has no present-day equivalent, and it is the largest of its three. Today's coastal extent is FEMA's; 2100's is NPCC3's. So the pair shows how much further the water goes, not one dataset at two dates.",
+            "delivery": "built",
+            "note": "Worth knowing before reading either layer: today's extent is 164 square kilometres and 95% of that is storm surge — the stormwater share is 10 square kilometres. By 2100 the extent is 228 square kilometres, and the two hazards move very differently: stormwater grows about eightfold, storm surge about 1.2 times. This map's subject is rain that cannot drain, which is the smaller share today and the faster-growing one. Drawn to give a reader the official picture to compare the reports against — these are the maps this archive exists to test, not evidence in it.",
+            "_deliveryNote": "Was 'static', described as 'drawn as supplied'. That stopped being true on 17 August: REB-512 found the 2100 layer covered less than half the area of today's, which is backwards, and rebuilt both from the four DEP and NPCC component files by geometric union with 20-metre simplification. scripts/build-floodplains.py is the build and it refuses to write if the future extent is not larger than the present one."
+          },
+          {
+            "id": "nta",
+            "name": "2020 Neighborhood Tabulation Areas",
+            "publisher": "NYC Department of City Planning",
+            "unit": "One row is one neighborhood boundary. A pin's neighborhood is worked out on the device against this file, so no location is ever sent anywhere to be named.",
+            "excludes": "Not applicable.",
+            "delivery": "static"
+          }
+        ],
+        "typesHeading": "Every asset type in the DEP layer",
+        "typesNote": "Read from the overlay the map is drawing, so this list and the dots on the map can never disagree."
+      }
+    }
+  }
+}

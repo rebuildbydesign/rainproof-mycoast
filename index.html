@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover, 19 August. Without it iOS letterboxes the page away
+       from the screen edges on a notch device AND, the part that actually bit,
+       every env(safe-area-inset-*) resolves to 0 — so the home-indicator work
+       in 3b1978c was inert on an iPhone 15 Pro. The chrome below holds itself
+       off the insets, so covering is safe. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Rainproof NYC Flood Map · Share Your Story</title>
+
+  <!-- Share card (REB-429). One site-wide card, deliberately: this is a static
+       site on GitHub Pages, Open Graph is read by crawlers that do not run
+       JavaScript, and there is no server to inject per-story tags at request
+       time. A prerendered file per approved story is the upgrade path if
+       sharing gets used; a Worker in front is not, because INFRA.md avoided
+       reintroducing a server on purpose.
+
+       Site-wide also settles the privacy question for free. Stories carry
+       consent levels and some are anonymous, so a card built from story
+       content is a second, more public place to leak a name or a precise
+       location. This card carries no story content at all.
+
+       Absolute URLs on purpose: relative ones break in every crawler. -->
+  <meta name="description" content="Flood stories from across the five boroughs, mapped block by block beside what New Yorkers have reported to 311 since Hurricane Ida.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Rainproof NYC Flood Map">
+  <meta property="og:url" content="https://rebuildbydesign.github.io/rainproof-mycoast/">
+  <meta property="og:title" content="Where New York floods, told by the people who live there">
+  <meta property="og:description" content="Combines personal narrative with publicly available flood data to create a more comprehensive picture of the extent of flood impacts across NYC.">
+  <meta property="og:image" content="https://rebuildbydesign.github.io/rainproof-mycoast/assets/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Rainproof NYC Flood Map. Where New York floods, told by the people who live there.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Where New York floods, told by the people who live there">
+  <meta name="twitter:description" content="Combines personal narrative with publicly available flood data to create a more comprehensive picture of the extent of flood impacts across NYC.">
+  <meta name="twitter:image" content="https://rebuildbydesign.github.io/rainproof-mycoast/assets/og-card.png">
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- The wordmark font (REB-459). Preloaded because it draws the first thing
+       on the page and would otherwise not be requested until the stylesheet has
+       parsed and the header has laid out. `crossorigin` is required even
+       same-origin: a font is always fetched in CORS mode, and a preload without
+       it is a second, wasted download rather than a warm cache hit. -->
+  <link rel="preload" href="assets/fonts/RBDBoldOutlined.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/core.css">
+  <link rel="stylesheet" href="css/layouts/atlas.css">
+</head>
+<body>
+
+
+  <div id="map"></div>
+
+  <!-- ADDRESS SEARCH, over the map (19 August, the director). It was the side
+       pane's top control; the pane is for stories now. Same ids as before, so
+       js/ui.js `wireGeoHost` and everything downstream is untouched. Sits at
+       the top-left of the VISIBLE map, so it slides right when the pane opens
+       and left when it closes. Hidden below 768px, where the phone's own map
+       bar (#mbAddrIn) already carries this. -->
+  <div class="map-search" id="mapSearch">
+    <p class="side-addr-prompt" id="addrPrompt"></p>
+    <div class="side-search">
+      <span class="side-addr-ico" aria-hidden="true" id="addrIco"></span>
+      <input id="addrIn" type="text" placeholder="Search an address" autocomplete="off"
+             aria-label="Search an address" aria-expanded="false" aria-controls="addrSugg" role="combobox">
+      <div class="addr-sugg" id="addrSugg" hidden></div>
+    </div>
+  </div>
+
+
+  <!-- HEADER -->
+  <!-- REB-477. The header is a stack now, not one bar: brand row, waterline,
+       credit strip. `.hdr-wrap` is what is fixed to the top and what ui.js
+       measures into `--hdr-h`; `.hdr` is just the first row of it. -->
+  <div class="hdr-wrap">
+  <header class="hdr">
+    <div class="hdr-brand">
+      <!-- The logo is the way back to a clean map: "./" reloads this page with
+           no filters, no open story and no ?story on the url, which is what
+           people expect a logo to do. Host-agnostic on purpose, so it behaves
+           the same on Pages and on a local server. -->
+      <!-- The aria-label is the fallback for the image and monogram cases, which
+           have no text of their own to announce. When the wordmark renders as
+           live text (REB-459) renderChrome strips it, because the name is then
+           the accessible name and a label would override it with a copy. -->
+      <a class="hdr-logo" id="logoText" href="./" title="Back to the map"
+         aria-label="Back to the map"></a>
+      <div class="hdr-brandcol">
+        <div class="hdr-name" id="hdrName"></div>
+        <!-- REB-477. The counts sit under the wordmark instead of in a pill
+             floating mid-bar. Both numbers are computed: the story count from
+             the live table, the 311 total from the same summary file the
+             methodology panel reads. -->
+        <div class="hdr-tally" id="hdrTally"></div>
+      </div>
+    </div>
+    <!-- Phone only (CSS). About / Methodology / the padlock fold in behind
+         this so the header is one row instead of two; above 768px it is
+         display:none and the nav sits inline as before. -->
+    <button class="hdr-burger" id="hdrBurger" type="button"
+            aria-label="Menu" aria-expanded="false" aria-controls="hdrNav"></button>
+    <nav class="hdr-nav" id="hdrNav">
+      <button class="hnav" id="aboutBtn">About</button>
+      <!-- ===== REB-471. HIDDEN FOR THE UX REVIEW. PUT THIS BACK. =====
+           Judy, 12 August: hide Impact and Findings until we have time to work
+           on them, while the cohort reviews the map. Ten reviewers pointed at
+           two panels we already know are unfinished would spend their feedback
+           on what we could have told them. Findings came back on 19 August as
+           its own panel (REB-522); Impact is what is left here.
+
+           The `hidden` attribute and this comment are the whole change. The
+           panel, its route and its click handler are untouched, so a direct
+           link still opens it and restoring the nav is deleting one attribute.
+           Deliberately NOT config-driven: scaffolding with a removal date
+           should be impossible to leave behind by accident, which is the same
+           reasoning as the beta gate in this file.
+
+           Take this out with the beta gate, before launch.               -->
+      <button class="hnav" id="impactBtn" hidden>Impact</button>
+      <!-- REB-522, 19 August. Findings is a panel of its own now and is
+           UNHIDDEN at Judy's ask: the menu reads About, Findings, Methodology.
+
+           It used to open the city's 311 record (REB-442) and was hidden twice
+           over — first with Impact under REB-471, then again on 17 August
+           ("FINDINGS AT THE END ... so much more priority items ahead of that")
+           because the findings were mid-rebuild onto census blocks.
+
+           The city record is not orphaned by the change: About still carries a
+           door to it (`#methodCity`). Impact above stays hidden, and its part
+           of REB-471 still stands — take it out with the beta gate. -->
+      <button class="hnav" id="findingsBtn">Findings</button>
+      <!-- Judy, 10 August: a door of its own. The methodology was reachable
+           only from a link inside the layers panel and another inside About,
+           which is two clicks and a guess for the question a practitioner
+           audience asks first — where is this data from, and how old is it. -->
+      <button class="hnav" id="methodBtn">Methodology</button>
+      <a class="hnav-admin" id="hdrAdmin" href="admin.html" target="_blank" rel="noopener"
+         title="Moderator sign-in" aria-label="Moderator sign-in"></a>
+    </nav>
+    <!-- ===== end of the brand row ===== -->
+  </header>
+    <!-- The waterline closes the sky. Below it is the street, where the
+         stories and the people who gathered them come from. -->
+    <div class="hdr-waterline" aria-hidden="true"></div>
+  </div>
+
+  <!-- MAP LAYERS PANEL -->
+  <div class="layers" id="layersPanel">
+    <div class="l-head" id="layersHead">
+      <div class="l-title" id="layersTitle"></div>
+      <button class="l-toggle" id="layersToggle" type="button" aria-label="Hide map layers"></button>
+    </div>
+    <div class="l-body" id="layersBody">
+      <div id="layerItems"></div>
+      <!-- The caveats that used to sit at the foot of the floating key. Once
+           per panel, not once per layer: all three 311 layers carry the same
+           sentence about their scales. -->
+      <div class="l-notes" id="layerNotes" hidden></div>
+      <div class="l-src" id="lSrc"></div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side" id="side">
+    <!-- REB-457. Judy: "make the sidepane top section as minimal as possible to
+         show more of the story cards." The header used to spend five stacked
+         rows before the first story — title, its own count line, search, type
+         chips, filter dropdowns, and a row holding nothing but the view toggle.
+
+         Two of those rows are gone. The count joined the title, where it reads
+         as part of the same sentence rather than a caption under it, and the
+         view toggle moved up beside the close button, which is the row that had
+         the space. Nothing was hidden behind a click to do it: every filter is
+         still visible without opening anything, which was the constraint —
+         a filter moved behind a control is a filter that gets used less.
+
+         What was measured and rejected: folding the four type chips into the
+         filter dropdown row. A fifth dropdown is ~85px against 37px of room
+         left on that line, so it wraps to a second row and the header is
+         exactly as tall as it was, with the most discoverable filter on the
+         page now behind a click. It only looks like a saving on paper. -->
+    <div class="side-hdr">
+      <!-- 17 August. Judy: give the title its own line and move the controls
+           below it, spaced out — the old single row packed title, count,
+           view toggle, search and filter into one line with nothing to
+           breathe. -->
+      <div class="side-top">
+        <div class="side-title-row">
+          <div class="side-title" id="sideTitle"></div>
+          <div class="side-count" id="sideCount">Loading…</div>
+          <button class="close-side" id="closeSide">✕</button>
+        </div>
+        <!-- 18 August. Judy's sidebar redesign: List/Photos/Search/Filter as
+             one bordered toolbar of labelled cells (Direction C) rather than
+             a segmented pair plus two bare icon buttons — one control
+             language instead of two. Still the popover anchor for
+             #searchWrap/#filterWrap, same as when this was `.side-actions`. -->
+        <div class="side-toolbar">
+          <button class="view-btn side-tool on" data-view="list" aria-label="Story list"></button>
+          <button class="view-btn side-tool" data-view="gallery" aria-label="Photo gallery"></button>
+          <!-- 17 August. Search moved behind its own icon — Judy: "we don't
+               really see people using this", so the space it held goes to the
+               address bar below. Same popover pattern as the funnel beside it. -->
+          <button class="filter-btn side-tool" id="searchBtn" type="button" aria-expanded="false"
+                  aria-controls="searchWrap" aria-label="Search stories"></button>
+          <!-- REB-472. Judy: not everyone is going to use the filters, so put
+               them behind one icon and give the space back to the stories. -->
+          <button class="filter-btn side-tool" id="filterBtn" type="button" aria-expanded="false"
+                  aria-controls="filterWrap" aria-label="Filters"></button>
+          <div class="filter-wrap" id="searchWrap" hidden>
+            <input id="searchIn" type="search" placeholder="Search stories, names, places…" autocomplete="off">
+          </div>
+          <!-- REB-472 round two, Judy 12 August: a small window that opens next
+               to the funnel rather than a section that pushes the pane down.
+               It lives INSIDE .side-toolbar so it can anchor to that row
+               exactly — `top: 100%; right: 0` — instead of guessing a
+               distance from the top of the header.
+
+               The five facet controls (story type now among them, REB-503)
+               and their dropdown live in here together and close together.
+               `.active-row` deliberately stays OUTSIDE and below: a closed
+               panel that hides an active filter turns a filtered list into
+               what looks like a broken list, and the chips are the only
+               thing saying otherwise. -->
+          <div class="filter-wrap" id="filterWrap" hidden>
+            <div class="filter-bar" id="filterBar"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 19 August, the director: the pane is for STORIES. The address search
+           moved out to #mapSearch, floating over the map beside this pane. The
+           ids did not change, so ui.js wires the same elements in the same way.
+           The "or" separator went with it — it was separating this button from
+           the address bar, and there is nothing above it now. -->
+      <!-- 17 August. Judy: the "Share Your Story" entry point has to exist in
+           the pane even for someone who never touches the address bar — the
+           old floating map button (removed this session) was the only other
+           generic way in. Opens the form with no location pre-set; the
+           form's own location step is the address search now too (see
+           js/form.js), not drop-a-pin/GPS, so this and the address bar above
+           both end at the same place. -->
+      <button type="button" class="side-share-cta" id="sideShareBtn"></button>
+      <div class="active-row" id="activeRow"></div>
+    </div>
+    <div class="feed" id="feed"></div>
+    <div class="gallery" id="gallery" style="display:none"></div>
+    <div class="side-detail" id="sideDetail">
+      <div class="sd-nav">
+        <button class="sd-back" id="sdBack">← Return to All Stories</button>
+        <div class="sd-steps">
+          <button class="sd-step" id="sdPrev" type="button" aria-label="Previous story"></button>
+          <span class="sd-count" id="sdCount" aria-live="polite"></span>
+          <button class="sd-step" id="sdNext" type="button" aria-label="Next story"></button>
+        </div>
+      </div>
+      <div class="sd-head" id="sdHead"></div>
+      <div class="sd-body" id="sdBody"></div>
+    </div>
+    <!-- Tap anywhere on the map and the city's record for that half mile opens
+         here (REB-442). Judy's reasoning: as built, a resident got nothing back
+         until they submitted a story. Their own block's picture comes first
+         now, and the reaction to it is what prompts a story.
+
+         A second .side-detail rather than a mode on the first: the story pane
+         owns prev/next, ?story= and the open-story id, and none of that means
+         anything for a place. Same class, so it inherits the slide-over
+         behaviour and every .sd-* style already tuned for it. -->
+    <div class="side-detail" id="placeDetail">
+      <div class="sd-nav">
+        <button class="sd-back" id="pdBack">← Return to All Stories</button>
+      </div>
+      <div class="sd-head sd-head-place" id="pdHead"></div>
+      <div class="sd-body" id="pdBody"></div>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <!-- 17 August. The floating "Share Your Story" CTA (#ctaBtn) is gone — Judy:
+       it disconnected people, since it opened the form with no location and
+       left drop-pin/GPS/neighborhood to sort out inside it. Submitting now
+       always starts from a place: tap the map or enter an address, both of
+       which open the same half-mile panel with "Add your story here" already
+       anchored to that point. See js/layouts/atlas.js and showWelcomeHint in
+       js/app.js for the two places that used to depend on this button. -->
+  <button class="fab" id="fabBtn"></button>
+
+  <!-- ═══ PHONE: MAP FIRST, ONE BAR ═══════════════════════════════════
+       Below 768px the map is the landing state and nothing covers it.
+       This bar holds the same two actions the side pane's header does
+       (address, then Share Your Story); #fabBtn above it is the door to
+       the story list. Hidden above 768px, where the pane is beside the
+       map rather than over it and already carries both.
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="map-bar" id="mapBar">
+    <div class="mb-search">
+      <span class="mb-ico" id="mbIco" aria-hidden="true"></span>
+      <input id="mbAddrIn" type="text" placeholder="Search an address" autocomplete="off"
+             enterkeyhint="search" autocapitalize="off" autocorrect="off"
+             aria-label="Search an address" aria-expanded="false" aria-controls="mbAddrSugg" role="combobox">
+      <!-- Grows UPWARD (.mb-sugg): there is no room below a bar that is
+           already sitting on the keyboard. -->
+      <div class="addr-sugg mb-sugg" id="mbAddrSugg" hidden></div>
+    </div>
+    <button type="button" class="mb-share" id="mbShareBtn"></button>
+  </div>
+
+  <!-- ═══ PHONE: A STORY IS A CARD, NOT A PANEL ═══════════════════════
+       The full detail (#sideDetail) still exists and is what "read the
+       full story" opens; this is the first stop, sized so two thirds of
+       the map stays live and the stepper works without leaving it.
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="story-card" id="storyCard" aria-live="polite">
+    <div class="sc-top">
+      <div class="sc-drop" id="scDrop" aria-hidden="true"></div>
+      <div class="sc-id">
+        <div class="sc-who" id="scWho"></div>
+        <div class="sc-hood" id="scHood"></div>
+      </div>
+      <div class="sc-steps">
+        <button class="sd-step" id="scPrev" type="button" aria-label="Previous story"></button>
+        <span class="sd-count" id="scCount" aria-live="polite"></span>
+        <button class="sd-step" id="scNext" type="button" aria-label="Next story"></button>
+      </div>
+      <button class="sc-x" id="scClose" type="button" aria-label="Close story">&#10005;</button>
+    </div>
+    <div class="sc-body" id="scBody"></div>
+    <div class="sc-tags" id="scTags"></div>
+    <button type="button" class="sc-more" id="scMore"></button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+     SHARED INTAKE + STORY-DETAIL OVERLAYS (every layout)
+     Injected by scripts/build.mjs at each layout shell's
+     <!--INTAKE- -> marker. form.js / ui.js assume these ids
+     exist in every layout.
+     ═══════════════════════════════════════════════════════ -->
+
+  <div class="pin-hint" id="pinHint"></div>
+
+  <!-- STORY POPUP OVERLAY -->
+  <div class="overlay" id="storyOverlay">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="spX" aria-label="Close this story">&#10005;</button>
+      <div class="sp-head" id="spHead"></div>
+      <div class="sp-body" id="spBody"></div>
+      <div class="sp-foot">
+        <button class="sp-close" id="spClose">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT OVERLAY -->
+  <div class="overlay" id="aboutOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="aboutX" aria-label="Close About">&#10005;</button>
+      <div class="ab-body" id="aboutBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="aboutClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- IMPACT SUMMARY OVERLAY -->
+  <div class="overlay" id="impactOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="impX" aria-label="Close this panel">&#10005;</button>
+      <div class="imp-body" id="impactBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="impClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- WHAT THE CITY'S RECORD SHOWS (REB-431) -->
+  <div class="overlay" id="cityOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="cityX" aria-label="Close this panel">&#10005;</button>
+      <div class="imp-body" id="cityBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="cityClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- FINDINGS (REB-522) — what the data shows, and a tabulation of the
+       stories shared. Same shell as the panels above it; the body renders
+       from js/app.js and every figure in it is computed from a file the map
+       already loads. -->
+  <div class="overlay" id="findingsOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="findX" aria-label="Close findings">&#10005;</button>
+      <div class="imp-body" id="findingsBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="findClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- HOW THIS MAP WORKS (REB-431) -->
+  <div class="overlay" id="methodOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="methodX" aria-label="Close this panel">&#10005;</button>
+      <div class="ab-body" id="methodBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="methodClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- DATA DICTIONARY (REB-453)
+       A second door off methodology rather than more of it. Methodology answers
+       a resident's question — where is this from, how old is it. This answers a
+       replicator's: which dataset, which filter, which window, what is excluded.
+       Both readers are real and the short panel is the wrong shape for the
+       second one, so it gets its own room instead of the first one growing. -->
+  <div class="overlay" id="dictOverlay">
+    <div class="sheet impact-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <button type="button" class="sheet-x sheet-x-abs" id="dictX" aria-label="Close this panel">&#10005;</button>
+      <div class="ab-body" id="dictBody"></div>
+      <div class="sp-foot"><button class="sp-close" id="dictClose">← Back to map</button></div>
+    </div>
+  </div>
+
+  <!-- SUBMIT FORM OVERLAY -->
+  <div class="overlay" id="formOverlay">
+    <div class="sheet form-sheet" onclick="event.stopPropagation()">
+      <div class="drag"></div>
+      <!-- REB-499 follow-on, Judy 19 August: the form was the one sheet whose ✕
+           was not top-right. It lived inside `#fHead`, which form.js re-renders,
+           and it was sitting 579px in from the sheet's right edge on a desktop.
+           Here it is the same element in the same place as the other six. -->
+      <button type="button" class="sheet-x sheet-x-abs" id="fCloseX"
+              aria-label="Close without sending">&#10005;</button>
+      <div class="sheet-head" id="fHead"></div>
+      <div class="sheet-body" id="fBody"></div>
+      <div class="nav-row" id="fNav"></div>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-close">✕</div>
+    <img id="lbImg" src="" alt="" oncontextmenu="return false" draggable="false">
+  </div>
+
+  <!-- CREDIT FOOTER — 18 August, moved out of the header stack (was under the
+       waterline) and down to the foot of the page at Judy's ask. Same element,
+       same id, same JS — only its position in the DOM and its CSS changed. -->
+  <footer class="hdr-credit" id="hdrCredit"></footer>
+
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
